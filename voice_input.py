@@ -1939,6 +1939,21 @@ class VoiceInputApp:
             self.recorder.stop_monitoring()
 
     def _quit(self):
+        # Ollama の Qwen を即座にアンロード (VRAM 解放)
+        try:
+            payload = json.dumps({
+                "model": self.formatter.llm_config["model"],
+                "keep_alive": 0,
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                self.formatter.llm_config["ollama_url"],
+                data=payload,
+                headers={"Content-Type": "application/json"},
+            )
+            urllib.request.urlopen(req, timeout=2)
+            print("[Quit] Ollama アンロード要求送信", flush=True)
+        except Exception as e:
+            print(f"[Quit] Ollama アンロード失敗: {e}", flush=True)
         try:
             self.dict_tracker.flush()
         except Exception:
