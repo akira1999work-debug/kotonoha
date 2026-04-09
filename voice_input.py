@@ -698,10 +698,21 @@ class Overlay:
         self._compute_layout()
 
         # ポップアップボタン (−/+/×) のフェード/ホバー状態
-        self.close_btn_visible = 0.0  # 0-1 フェード (3 ボタン共通)
+        # 各ボタンは独立して near 判定 → フェードする
+        self.close_btn_visible = 0.0
+        self.min_btn_visible = 0.0
+        self.expand_btn_visible = 0.0
         self.close_btn_hovered = False
         self.min_btn_hovered = False
         self.expand_btn_hovered = False
+
+        # Mini ↔ Normal 遷移 (geometric morph)
+        # current_pill_w を ease-out で target_pill_w に収束させ、
+        # pill_x0/x1/mic_cx などを毎フレーム再計算する。
+        self.current_pill_w = float(self.pill_w)
+        self.target_pill_w = float(self.pill_w)
+        self.transitioning = False
+        self._transition_mic_cx_local = int(self.mic_cx)
 
         # ドラッグ状態
         self._drag_active = False     # マウスボタン押下中
@@ -929,6 +940,7 @@ class Overlay:
 
         self._compact_h = s(compact_h_l)
         self._expanded_h = s(compact_h_l + expanded_extra_l)
+        self._normal_pill_w = s(pill_w_l)  # mini↔normal 遷移の lerp 基準
         self.pill_radius = self._compact_h // 2  # radius は compact 基準で固定
 
         if self.is_minimized:
@@ -990,22 +1002,25 @@ class Overlay:
 
         # − (minimize) / + (expand): pill 右上の外側にポップアップ
         # 位置は compact pill の上端基準 (expand アニメの影響を受けない)
-        btn_spacing = s(6)
         top_anchor = self.pill_y1 - self._compact_h
         top_y = top_anchor - s(18)
         right_margin = s(14)
-        self.expand_btn_cx = self.pill_x1 - right_margin - self.close_btn_w // 2
-        self.expand_btn_cy = top_y
         if self.is_minimized:
-            # mini 中は pill が小さいので − (minimize) は配置しない
-            # (ヒット判定から外すため画面外へ)
+            # mini 中: + (expand) のみ右上に配置、− (minimize) は画面外
+            self.expand_btn_cx = (
+                self.pill_x1 - right_margin - self.close_btn_w // 2
+            )
+            self.expand_btn_cy = top_y
             self.min_btn_cx = -99999
             self.min_btn_cy = -99999
         else:
+            # 通常時: − (minimize) のみ右上に配置、+ (expand) は画面外
             self.min_btn_cx = (
-                self.expand_btn_cx - self.close_btn_w - btn_spacing
+                self.pill_x1 - right_margin - self.close_btn_w // 2
             )
             self.min_btn_cy = top_y
+            self.expand_btn_cx = -99999
+            self.expand_btn_cy = -99999
 
     # ---------- 永続状態 ----------
 
@@ -1052,28 +1067,27 @@ class Overlay:
 
     def _hit_test(self, lx: int, ly: int) -> str | None:
         """window-local 座標からクリック対象を判定。"""
-        # ポップアップボタン (visible 時のみ)
-        if self.close_btn_visible > 0.5:
-            half_w = self.close_btn_w // 2
-            half_h = self.close_btn_h // 2
-            # expand (+) — 最右上
-            if (
-                self.expand_btn_cx - half_w <= lx <= self.expand_btn_cx + half_w
-                and self.expand_btn_cy - half_h <= ly <= self.expand_btn_cy + half_h
-            ):
-                return "expand"
-            # minimize (−) — mini 中は -99999 で自動的に外
-            if (
-                self.min_btn_cx - half_w <= lx <= self.min_btn_cx + half_w
-                and self.min_btn_cy - half_h <= ly <= self.min_btn_cy + half_h
-            ):
-                return "minimize"
-            # close (×) — 下部中央
-            if (
-                self.close_btn_cx - half_w <= lx <= self.close_btn_cx + half_w
-                and self.close_btn_cy - half_h <= ly <= self.close_btn_cy + half_h
-            ):
-                return "close"
+        half_w = self.close_btn_w // 2
+        half_h = self.close_btn_h // 2
+        # 各ボタンは独立に visible 判定 (off-screen 中は visible が 0 のままなのでスキップ)
+        # expand (+) — mini 中のみ右上
+        if self.expand_btn_visible > 0.5 and (
+            self.expand_btn_cx - half_w <= lx <= self.expand_btn_cx + half_w
+            and self.expand_btn_cy - half_h <= ly <= self.expand_btn_cy + half_h
+        ):
+            return "expand"
+        # minimize (−) — 通常時のみ右上
+        if self.min_btn_visible > 0.5 and (
+            self.min_btn_cx - half_w <= lx <= self.min_btn_cx + half_w
+            and self.min_btn_cy - half_h <= ly <= self.min_btn_cy + half_h
+        ):
+            return "minimize"
+        # close (×) — 下部中央
+        if self.close_btn_visible > 0.5 and (
+            self.close_btn_cx - half_w <= lx <= self.close_btn_cx + half_w
+            and self.close_btn_cy - half_h <= ly <= self.close_btn_cy + half_h
+        ):
+            return "close"
 
         # マイクボタン (円)
         dx = lx - self.mic_cx
@@ -1148,26 +1162,89 @@ class Overlay:
             self._set_minimized(False)
 
     def _set_minimized(self, flag: bool):
+        """ミニ ↔ 通常 の切替トリガ。geometric morph で繋ぐ。
+
+        戦略:
+        - normal → mini: window は normal サイズのまま、pill_w を compact_h へ ease。
+          完了時に window を mini サイズへリサイズ (mic の screen 位置を anchor)。
+        - mini → normal: 先に window を normal サイズへリサイズ (mic anchor)。
+          pill_w は compact_h スタートのまま normal_pill_w へ ease。
+        """
         if self.is_minimized == flag:
             return
+        if self.transitioning:
+            return  # 遷移中の割り込みは無視
+        prev_mic_cx_screen = self.win_x + self.mic_cx
+        prev_mic_cy_screen = self.win_y + self.mic_cy
         self.is_minimized = flag
-        prev_cx = self.win_x + self.window_w // 2
-        prev_cy = self.win_y + self.window_h // 2
-        self._compute_layout()
-        # サイズ変更後、ウィンドウを元の中心周辺に保つ
-        new_x = prev_cx - self.window_w // 2
-        new_y = prev_cy - self.window_h // 2
-        sw = self.win.winfo_screenwidth()
-        sh = self.win.winfo_screenheight()
-        self.win_x = self._clamp_x(new_x, sw)
-        self.win_y = self._clamp_y(new_y, sh)
-        self.final_win_y = self.win_y
-        self.win.geometry(
-            f"{self.window_w}x{self.window_h}+{self.win_x}+{self.win_y}"
-        )
-        # ポップアップはいったん隠す (次フレームのホバー判定で再表示)
+
+        if flag:
+            # normal → mini: window はそのまま。pill_w を縮めるアニメへ。
+            self._transition_mic_cx_local = int(self.mic_cx)
+            self.current_pill_w = float(self.pill_w)
+            self.target_pill_w = float(self._compact_h)
+        else:
+            # mini → normal: 先に window を normal へリサイズ (mic anchor)
+            self._compute_layout()
+            new_x = prev_mic_cx_screen - self.mic_cx
+            new_y = prev_mic_cy_screen - self.mic_cy
+            sw = self.win.winfo_screenwidth()
+            sh = self.win.winfo_screenheight()
+            self.win_x = self._clamp_x(new_x, sw)
+            self.win_y = self._clamp_y(new_y, sh)
+            self.final_win_y = self.win_y
+            self.win.geometry(
+                f"{self.window_w}x{self.window_h}+{self.win_x}+{self.win_y}"
+            )
+            # pill_w は compact_h スタート → normal_pill_w ターゲット
+            self._transition_mic_cx_local = int(self.mic_cx)
+            self.current_pill_w = float(self._compact_h)
+            self.target_pill_w = float(self.pill_w)
+
+        self.transitioning = True
+        # ポップアップは全部隠す (遷移中はホバー判定もスキップ)
         self.close_btn_visible = 0.0
+        self.min_btn_visible = 0.0
+        self.expand_btn_visible = 0.0
         self._save_state()
+
+        # 遷移初期フレームの位置を即座に反映して再描画する。
+        # 特に mini→normal では window リサイズ直後に古い mini bitmap が
+        # upper-left に残ってしまうため、同期的に新しい状態を push する必要がある。
+        self._apply_transition_positions()
+        if self.visible:
+            self._render()
+
+    def _apply_transition_positions(self):
+        """transitioning 中に current_pill_w から pill/mic/ボタン位置を再計算する。
+
+        _animate の transition block と _set_minimized 初回フレーム強制レンダ
+        の両方から呼ばれるヘルパ。
+        """
+        denom = float(self._normal_pill_w - self._compact_h)
+        if denom > 0:
+            t = (self.current_pill_w - self._compact_h) / denom
+        else:
+            t = 1.0
+        t = max(0.0, min(1.0, t))
+
+        mic_offset = (
+            self._compact_h / 2.0
+            + (s(50) - self._compact_h / 2.0) * t
+        )
+        self.pill_x1 = int(self._transition_mic_cx_local + mic_offset)
+        self.pill_x0 = self.pill_x1 - int(self.current_pill_w)
+        self.mic_cx = self._transition_mic_cx_local
+        self.pill_w = int(self.current_pill_w)
+
+        pill_cx_mid = (self.pill_x0 + self.pill_x1) // 2
+        self.close_btn_cx = pill_cx_mid
+        right_margin = s(14)
+        btn_cx = self.pill_x1 - right_margin - self.close_btn_w // 2
+        if self.is_minimized:
+            self.expand_btn_cx = btn_cx
+        else:
+            self.min_btn_cx = btn_cx
 
     # ---------- アニメーションループ ----------
 
@@ -1175,14 +1252,20 @@ class Overlay:
         self.phase += 0.05
 
         # ===== Pill 高さアニメーション =====
-        if self.is_minimized:
-            # ミニ中は高さアニメ無効 (マイク 1 個サイズ固定)
+        # 完全 mini 中のみスナップ。遷移中は window が normal サイズなので
+        # 通常の ease ロジックを使い、target は compact (または録音中は expanded)。
+        if self.is_minimized and not self.transitioning:
+            # 完全 mini — compact_h に固定
             self.current_pill_h = float(self._compact_h)
             self.pill_y0 = self.glow_pad_top
         else:
-            target_h = (
-                self._expanded_h if self.is_recording else self._compact_h
-            )
+            if self.is_minimized:
+                # 遷移中 (normal → mini): pill_h も compact へ ease
+                target_h = self._compact_h
+            else:
+                target_h = (
+                    self._expanded_h if self.is_recording else self._compact_h
+                )
             diff = target_h - self.current_pill_h
             if abs(diff) < 0.5:
                 self.current_pill_h = float(target_h)
@@ -1190,84 +1273,96 @@ class Overlay:
                 self.current_pill_h += diff * 0.18  # ease-out smoothing
             self.pill_y0 = self.pill_y1 - int(self.current_pill_h)
 
+            # − (minimize) ボタンは pill 上端に追従 (録音中に pill が伸びても被らない)
+            if not self.is_minimized:
+                self.min_btn_cy = self.pill_y0 - s(18)
+
+        # ===== Mini ↔ Normal geometric morph =====
+        # current_pill_w を ease-out で target へ収束させ、pill/mic/ボタン位置を再計算。
+        if self.transitioning:
+            diff_w = self.target_pill_w - self.current_pill_w
+            if abs(diff_w) < 0.4:
+                self.current_pill_w = self.target_pill_w
+                morph_finished = True
+            else:
+                self.current_pill_w += diff_w * 0.22  # ease-out
+                morph_finished = False
+
+            self._apply_transition_positions()
+
+            # アニメ完了処理
+            if morph_finished:
+                if self.is_minimized:
+                    # mini 用に window をリサイズ (mic screen pos 保持)
+                    prev_mic_cx_screen = self.win_x + self.mic_cx
+                    prev_mic_cy_screen = self.win_y + self.mic_cy
+                    self._compute_layout()
+                    new_x = prev_mic_cx_screen - self.mic_cx
+                    new_y = prev_mic_cy_screen - self.mic_cy
+                    sw = self.win.winfo_screenwidth()
+                    sh = self.win.winfo_screenheight()
+                    self.win_x = self._clamp_x(new_x, sw)
+                    self.win_y = self._clamp_y(new_y, sh)
+                    self.final_win_y = self.win_y
+                    self.win.geometry(
+                        f"{self.window_w}x{self.window_h}"
+                        f"+{self.win_x}+{self.win_y}"
+                    )
+                self.current_pill_w = float(self.pill_w)
+                self.target_pill_w = self.current_pill_w
+                self.transitioning = False
+
         # ===== マウスホバー判定 (−/+/× ポップアップボタン) =====
-        if self.visible:
+        # 各ボタンは独立して判定する: 近接 (rect + padding) でそのボタンのみフェードイン、
+        # 正確な rect に入ったら hovered フラグを立てて色を変える。
+        # transition 中はポップアップを全部隠してホバー判定もスキップする。
+        if self.visible and not self.transitioning:
             mx, my = _get_cursor_pos()
             lx = mx - self.win_x
             ly = my - self.win_y
 
-            # 下部ホバーエリア (× close 表示用): pill 下端付近
-            bot_y0 = self.pill_y1 - s(16)
-            bot_y1 = self.pill_y1 + self.hover_area_extra
-            in_bot_y = bot_y0 <= ly <= bot_y1
-            in_bot_x = self.pill_x0 <= lx <= self.pill_x1
-
-            # 上部ホバーエリア (− / + 表示用): compact pill 上端付近 + 上方
-            top_anchor = self.pill_y1 - self._compact_h
-            top_y0 = top_anchor - self.hover_area_extra
-            top_y1 = top_anchor + s(16)
-            in_top_y = top_y0 <= ly <= top_y1
-            in_top_x = self.pill_x0 <= lx <= self.pill_x1
-
-            # マイクボタン (円) を除外
-            dx_mic = lx - self.mic_cx
-            dy_mic = ly - self.mic_cy
-            mic_exclude_r = self.mic_r + s(6)
-            on_mic = (
-                (dx_mic * dx_mic + dy_mic * dy_mic)
-                <= (mic_exclude_r * mic_exclude_r)
-            )
-
-            in_hover = (
-                ((in_bot_y and in_bot_x) or (in_top_y and in_top_x))
-                and not on_mic
-            )
-
             half_w = self.close_btn_w // 2
             half_h = self.close_btn_h // 2
+            prox = s(18)  # 近づいたら表示されるまでの余裕
 
-            # close button 矩形
-            cbx0 = self.close_btn_cx - half_w
-            cbx1 = self.close_btn_cx + half_w
-            cby0 = self.close_btn_cy - half_h
-            cby1 = self.close_btn_cy + half_h
-            in_close_btn = cbx0 <= lx <= cbx1 and cby0 <= ly <= cby1
+            def _in_rect(bcx, bcy, pad=0):
+                return (
+                    bcx - half_w - pad <= lx <= bcx + half_w + pad
+                    and bcy - half_h - pad <= ly <= bcy + half_h + pad
+                )
+
+            # 正確な rect (click / hover color)
+            in_close_btn = _in_rect(self.close_btn_cx, self.close_btn_cy)
+            in_min_btn = _in_rect(self.min_btn_cx, self.min_btn_cy)
+            in_expand_btn = _in_rect(self.expand_btn_cx, self.expand_btn_cy)
             self.close_btn_hovered = in_close_btn
-
-            # minimize button 矩形 (mini 中は座標が -99999 で常に外)
-            mbx0 = self.min_btn_cx - half_w
-            mbx1 = self.min_btn_cx + half_w
-            mby0 = self.min_btn_cy - half_h
-            mby1 = self.min_btn_cy + half_h
-            in_min_btn = mbx0 <= lx <= mbx1 and mby0 <= ly <= mby1
             self.min_btn_hovered = in_min_btn
-
-            # expand button 矩形
-            ebx0 = self.expand_btn_cx - half_w
-            ebx1 = self.expand_btn_cx + half_w
-            eby0 = self.expand_btn_cy - half_h
-            eby1 = self.expand_btn_cy + half_h
-            in_expand_btn = ebx0 <= lx <= ebx1 and eby0 <= ly <= eby1
             self.expand_btn_hovered = in_expand_btn
 
-            # フェード (pill ホバー or いずれかのボタンホバーで表示)
-            target_visible = (
-                1.0
-                if (
-                    in_hover
-                    or in_close_btn
-                    or in_min_btn
-                    or in_expand_btn
-                )
-                else 0.0
+            # 近接 zone (fade-in trigger)
+            near_close = _in_rect(self.close_btn_cx, self.close_btn_cy, prox)
+            near_min = _in_rect(self.min_btn_cx, self.min_btn_cy, prox)
+            near_expand = _in_rect(self.expand_btn_cx, self.expand_btn_cy, prox)
+
+            def _ease(cur, tgt):
+                d = tgt - cur
+                if abs(d) < 0.02:
+                    return tgt
+                return cur + d * 0.25
+
+            self.close_btn_visible = _ease(
+                self.close_btn_visible, 1.0 if near_close else 0.0
             )
-            v_diff = target_visible - self.close_btn_visible
-            if abs(v_diff) < 0.02:
-                self.close_btn_visible = target_visible
-            else:
-                self.close_btn_visible += v_diff * 0.25
+            self.min_btn_visible = _ease(
+                self.min_btn_visible, 1.0 if near_min else 0.0
+            )
+            self.expand_btn_visible = _ease(
+                self.expand_btn_visible, 1.0 if near_expand else 0.0
+            )
         else:
             self.close_btn_visible = 0.0
+            self.min_btn_visible = 0.0
+            self.expand_btn_visible = 0.0
             self.close_btn_hovered = False
             self.min_btn_hovered = False
             self.expand_btn_hovered = False
@@ -1453,20 +1548,21 @@ class Overlay:
             d.text((lx, ly), line, font=font, fill=(tr, tg, tb, 250))
 
     def _draw_close_button_pil(self, img: Image.Image):
-        """pill 周りのホバー popup 式 ボタン群 (−/+/×)"""
-        if self.close_btn_visible < 0.02:
-            return
-        d = ImageDraw.Draw(img)
-        alpha = self.close_btn_visible
-        half_w = self.close_btn_w // 2
-        half_h = self.close_btn_h // 2
+        """pill 周りのホバー popup 式 ボタン群 (−/+/×)
 
-        def draw_btn(cx, cy, symbol, hovered):
-            x0 = cx - half_w
-            x1 = cx + half_w
-            y0 = cy - half_h
-            y1 = cy + half_h
+        PIL の ImageDraw は ellipse/line に AA が効かないため、
+        3x スーパーサンプリングして LANCZOS で縮小してから合成する。
+        各ボタンは独立した *_visible を alpha として持つ。
+        """
+        btn_w = self.close_btn_w
+        btn_h = self.close_btn_h
+        SS = 3  # supersample factor
+        ssw = btn_w * SS
+        ssh = btn_h * SS
 
+        def draw_btn(cx, cy, symbol, hovered, alpha):
+            if alpha < 0.02:
+                return
             # 色: ホバー時は symbol 別にアクセント色
             if hovered:
                 if symbol == "x":
@@ -1481,48 +1577,65 @@ class Overlay:
                 border = (200, 205, 215, int(180 * alpha))
                 fg = (100, 105, 120, int(235 * alpha))
 
-            d.ellipse((x0, y0, x1, y1), fill=bg, outline=border, width=1)
+            # 3x 解像度で描画してからダウンスケール
+            layer = Image.new("RGBA", (ssw, ssh), (0, 0, 0, 0))
+            ld = ImageDraw.Draw(layer)
 
-            pad = self.close_btn_w // 4
-            lw = max(1, s(2))
+            # 背景円 (outline の太さも SS 倍しないと縮小後に消える)
+            ld.ellipse(
+                (0, 0, ssw - 1, ssh - 1),
+                fill=bg, outline=border, width=SS,
+            )
+
+            pad = (btn_w // 4) * SS
+            lw = max(SS, s(2) * SS)
+            cx_loc = ssw // 2
+            cy_loc = ssh // 2
             if symbol == "x":
-                d.line(
-                    [(x0 + pad, y0 + pad), (x1 - pad, y1 - pad)],
+                ld.line(
+                    [(pad, pad), (ssw - 1 - pad, ssh - 1 - pad)],
                     fill=fg, width=lw,
                 )
-                d.line(
-                    [(x1 - pad, y0 + pad), (x0 + pad, y1 - pad)],
+                ld.line(
+                    [(ssw - 1 - pad, pad), (pad, ssh - 1 - pad)],
                     fill=fg, width=lw,
                 )
             elif symbol == "minus":
-                d.line(
-                    [(x0 + pad, cy), (x1 - pad, cy)],
+                ld.line(
+                    [(pad, cy_loc), (ssw - 1 - pad, cy_loc)],
                     fill=fg, width=lw,
                 )
             elif symbol == "plus":
-                d.line(
-                    [(x0 + pad, cy), (x1 - pad, cy)],
+                ld.line(
+                    [(pad, cy_loc), (ssw - 1 - pad, cy_loc)],
                     fill=fg, width=lw,
                 )
-                d.line(
-                    [(cx, y0 + pad), (cx, y1 - pad)],
+                ld.line(
+                    [(cx_loc, pad), (cx_loc, ssh - 1 - pad)],
                     fill=fg, width=lw,
                 )
 
+            small = layer.resize((btn_w, btn_h), Image.LANCZOS)
+            img.alpha_composite(
+                small, dest=(cx - btn_w // 2, cy - btn_h // 2)
+            )
+
         # × (close) — 下部中央
         draw_btn(
-            self.close_btn_cx, self.close_btn_cy, "x", self.close_btn_hovered
+            self.close_btn_cx, self.close_btn_cy,
+            "x", self.close_btn_hovered, self.close_btn_visible,
         )
-        # + (expand) — 右上
-        draw_btn(
-            self.expand_btn_cx, self.expand_btn_cy,
-            "plus", self.expand_btn_hovered,
-        )
-        # − (minimize) — 通常時のみ (mini 中は座標が画面外)
-        if not self.is_minimized:
+        # + (expand) — mini 中のみ (通常時は座標が画面外 + visible が 0)
+        if self.is_minimized:
+            draw_btn(
+                self.expand_btn_cx, self.expand_btn_cy,
+                "plus", self.expand_btn_hovered, self.expand_btn_visible,
+            )
+        # − (minimize) — 通常時のみ (mini 中は座標が画面外 + visible が 0)
+        else:
             draw_btn(
                 self.min_btn_cx, self.min_btn_cy,
-                "minus", self.min_btn_hovered,
+                "minus", self.min_btn_hovered, self.min_btn_visible,
             )
 
     def _render_glow(self):
@@ -1531,18 +1644,44 @@ class Overlay:
 
         breathing = 0.7 + 0.3 * math.sin(self.phase * 1.5)
 
-        if self.is_recording:
+        if self.transitioning:
+            # 遷移中: current_pill_w から t を計算して glow パラメータを lerp
+            denom = float(self._normal_pill_w - self._compact_h)
+            if denom > 0:
+                t = (self.current_pill_w - self._compact_h) / denom
+            else:
+                t = 0.0
+            t = max(0.0, min(1.0, t))
+            base_alpha = int(255 * self.glow_intensity * breathing)
+            blob_rx = int(s(28) + (s(62) - s(28)) * t)
+            blob_ry = int(s(22) + (s(32) - s(22)) * t)
+            blur_radius = int(s(14) + (s(22) - s(14)) * t)
+            halo_pad = int(s(8) + (s(14) - s(8)) * t)
+            wander_speed = 0.55
+        elif self.is_minimized:
+            # mini: 小さな丸ピルに合わせて glow を縮小。
+            # 通常モードの blob/blur サイズをそのまま使うと、小さな window の端で
+            # GaussianBlur がクリップされて四角い枠が見えてしまうため。
+            base_alpha = int(255 * self.glow_intensity * breathing)
+            blob_rx = s(28)
+            blob_ry = s(22)
+            blur_radius = s(14)
+            wander_speed = 0.9 if self.is_recording else 0.55
+            halo_pad = s(8)
+        elif self.is_recording:
             base_alpha = int(255 * self.glow_intensity * breathing)
             blob_rx = s(70)
             blob_ry = s(38)
             blur_radius = s(26)
             wander_speed = 0.9
+            halo_pad = s(14)
         else:
             base_alpha = int(255 * self.glow_intensity * breathing)
             blob_rx = s(62)
             blob_ry = s(32)
             blur_radius = s(22)
             wander_speed = 0.55
+            halo_pad = s(14)
         base_alpha = max(0, min(255, base_alpha))
 
         if self.is_recording:
@@ -1588,7 +1727,6 @@ class Overlay:
                 fill=color + (base_alpha,),
             )
 
-        halo_pad = s(14)
         halo_alpha = int(base_alpha * 0.55)
         gd.rounded_rectangle(
             (self.pill_x0 - halo_pad, self.pill_y0 - halo_pad,
