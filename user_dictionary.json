@@ -1,11 +1,14 @@
 {
   "version": 2,
   "description": "Kotonoha ユーザー辞書。Whisper/LLM の固有名詞認識を補正する。誤認識を見つけたら readings に追記していけばよい。hit_count/last_used は voice_input.py が自動更新。",
-  "last_updated": "2026-04-09",
+  "last_updated": "2026-04-10",
   "terms": [
     {
       "term": "Claude Code",
-      "readings": ["クロードコード", "クラウドコード"],
+      "readings": [
+        "クロードコード",
+        "クラウドコード"
+      ],
       "category": "tool",
       "notes": "Anthropic の CLI",
       "priority": 10,
@@ -14,7 +17,10 @@
     },
     {
       "term": "Whisper",
-      "readings": ["ウィスパー", "ウィスパ"],
+      "readings": [
+        "ウィスパー",
+        "ウィスパ"
+      ],
       "category": "tool",
       "notes": "OpenAI の音声認識モデル",
       "priority": 8,
@@ -23,25 +29,33 @@
     },
     {
       "term": "Ollama",
-      "readings": ["オラマ", "オーラマ"],
+      "readings": [
+        "オラマ",
+        "オーラマ"
+      ],
       "category": "tool",
       "notes": "ローカル LLM ランタイム",
       "priority": 8,
-      "hit_count": 0,
-      "last_used": null
+      "hit_count": 1,
+      "last_used": "2026-04-10"
     },
     {
       "term": "Qwen",
-      "readings": ["クウェン", "クエン"],
+      "readings": [
+        "クウェン",
+        "クエン"
+      ],
       "category": "tool",
       "notes": "Alibaba の LLM",
       "priority": 7,
-      "hit_count": 0,
-      "last_used": null
+      "hit_count": 1,
+      "last_used": "2026-04-10"
     },
     {
       "term": "TypeScript",
-      "readings": ["タイプスクリプト"],
+      "readings": [
+        "タイプスクリプト"
+      ],
       "category": "tool",
       "notes": "言語",
       "priority": 7,
@@ -50,7 +64,10 @@
     },
     {
       "term": "Next.js",
-      "readings": ["ネクストジェーエス", "ネクストジェイエス"],
+      "readings": [
+        "ネクストジェーエス",
+        "ネクストジェイエス"
+      ],
       "category": "tool",
       "notes": "React フレームワーク",
       "priority": 7,
@@ -59,7 +76,10 @@
     },
     {
       "term": "Supabase",
-      "readings": ["スーパーベース", "スパベース"],
+      "readings": [
+        "スーパーベース",
+        "スパベース"
+      ],
       "category": "tool",
       "notes": "BaaS",
       "priority": 7,
@@ -68,7 +88,10 @@
     },
     {
       "term": "Kotonoha",
-      "readings": ["ことのは", "コトノハ"],
+      "readings": [
+        "ことのは",
+        "コトノハ"
+      ],
       "category": "project",
       "notes": "このツール自身",
       "priority": 10,

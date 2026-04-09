@@ -11,6 +11,9 @@ env/
 *.log
 logs/
 
+# Local runtime state
+overlay_state.json
+
 # OS
 Thumbs.db
 .DS_Store
