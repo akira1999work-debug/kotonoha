@@ -1,0 +1,84 @@
+{
+  "hotkey": "right alt",
+  "double_tap_ms": 400,
+  "mode": "toggle",
+  "max_duration_sec": 60,
+
+  "realtime": {
+    "enabled": true,
+    "interval_sec": 0.5,
+    "min_audio_sec": 0.4,
+    "use_llm_format": true
+  },
+
+  "overlay": {
+    "width": 480,
+    "height": 72,
+    "glow_pad_x": 36,
+    "glow_pad_y": 30,
+    "bottom_margin": 36,
+    "alpha": 0.85,
+    "bg_color": "#ffffff",
+    "border_color": "#e8eaee",
+    "shadow_color": "#b8bcc4",
+    "accent_color": "#0a84ff",
+    "accent_active": "#ff3b30",
+    "accent_text": "#ffffff",
+    "text_color": "#1c1d20",
+    "text_muted": "#9094a0",
+    "glow_idle_color": "#bbd6ff",
+    "glow_active_color": "#7ab3ff",
+    "transparent_color": "#ff00fe",
+    "corner_radius": 36,
+    "waveform_bars": 56,
+    "fps": 30,
+    "use_dwm_blur": true
+  },
+
+
+  "whisper": {
+    "model": "large-v3-turbo",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "ja",
+    "beam_size": 1,
+    "vad_filter": true,
+    "initial_prompt": "Claude Code, Cursor, TypeScript, JavaScript, React, Next.js, Tauri, Vercel, Supabase, Ollama, Qwen, faster-whisper, Python, GitHub, npm, pnpm, useEffect, useState, async await, API, JSON, ファインチューニング, リファクタリング, コンポーネント, プロパティ"
+  },
+
+  "llm": {
+    "model": "qwen2.5:7b-instruct-q4_K_M",
+    "ollama_url": "http://127.0.0.1:11434/api/generate",
+    "temperature": 0.1,
+    "keep_alive": "30m",
+    "num_predict": 512
+  },
+
+  "prompts": {
+    "default": "あなたは音声書き起こしの最小整形器です。ほとんど何も変えずに、フィラー除去と句読点補完だけをしてください。\n\n【絶対ルール (全て厳守)】\n1. 元の語尾を絶対に変えない (「〜だ」→「〜だ。」は OK、「〜だ」→「〜です」は NG)\n2. 敬語化/丁寧語化しない (「する」→「します」は NG)\n3. カジュアル化しない (「します」→「する」は NG)\n4. 単語・語順・言い回しを変えない\n5. 文を再構成・要約しない\n6. 内容を追加しない (存在しない単語を補完しない)\n7. カタカナを英字に変換しない\n8. 日本語を英語に翻訳しない\n9. バッククォート・マークダウン・説明文を追加しない\n10. 出力は整形後の本文のみ\n\n【許可される操作 (これだけ)】\n- フィラー削除(えーと、あの、まあ、ええと、その、なんか)\n- 句読点(、。)の追加\n- 明らかな同音異義語の修正\n\n【例1】\n入力: えーとこの関数をリファクタして\n出力: この関数をリファクタして\n\n【例2】\n入力: 波形バーを表示してから録音開始してください\n出力: 波形バーを表示してから録音開始してください。\n\n【例3】\n入力: あのコンポーネントのpropsをえーとTypeScriptの型で定義して\n出力: あのコンポーネントのpropsをTypeScriptの型で定義して。\n\n【例4】\n入力: ライトAltを一回押したら録音開始 二回押したら待機\n出力: ライトAltを一回押したら録音開始、二回押したら待機。\n\n【例5: 語尾維持の例】\n入力: これ直した方がいいんじゃないかな\n出力: これ直した方がいいんじゃないかな。\n(「〜かな」→「〜でしょうか」のような敬語化は NG)",
+
+    "code": "あなたは音声書き起こしの最小整形器です。ほとんど何も変えずに、フィラー除去と句読点補完だけをしてください。\n\n【絶対ルール】\n1. 元の語尾を絶対に変えない\n2. 敬語化やカジュアル化をしない\n3. 単語・語順・言い回しを変えない\n4. 文を再構成・要約しない\n5. 内容を追加しない\n6. 翻訳しない\n7. マークダウン・説明文を追加しない\n8. 出力は整形後の本文のみ\n\n【許可】\n- フィラー削除\n- 句読点追加\n- 明らかな同音異義語修正\n\n【例1】\n入力: えーとこの関数をリファクタして\n出力: この関数をリファクタして\n\n【例2】\n入力: 波形バーを表示してから録音開始してください\n出力: 波形バーを表示してから録音開始してください。",
+
+    "casual": "あなたは音声書き起こしの最小整形器です。ほとんど何も変えずに、フィラー除去と句読点補完だけをしてください。\n\n【絶対ルール】\n1. 語尾を変えない\n2. 言い回し・単語を変えない\n3. 内容を追加しない\n4. 翻訳しない\n5. 出力は本文のみ\n\n【許可】\n- フィラー削除\n- 句読点追加\n\n【例】\n入力: えーと今日のあれって何時からだっけ\n出力: 今日のあれって何時からだっけ"
+  },
+
+  "app_routing": {
+    "claude.exe": "code",
+    "Code.exe": "code",
+    "Cursor.exe": "code",
+    "windsurf.exe": "code",
+    "WindowsTerminal.exe": "code",
+    "powershell.exe": "code",
+    "cmd.exe": "code",
+    "LINE.exe": "casual",
+    "Discord.exe": "casual",
+    "slack.exe": "casual"
+  },
+
+  "output": {
+    "auto_paste": true,
+    "copy_to_clipboard": true,
+    "skip_format_for_short": true,
+    "short_threshold_chars": 8
+  }
+}

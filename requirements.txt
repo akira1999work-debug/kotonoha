@@ -1,0 +1,13 @@
+# Core
+numpy
+sounddevice
+pyperclip
+pynput
+Pillow
+pycairo
+faster-whisper
+
+# Optional (Windows tray / active-window detection)
+pystray
+pywin32 ; sys_platform == "win32"
+psutil

@@ -1,0 +1,79 @@
+{
+  "version": 2,
+  "description": "Kotonoha ユーザー辞書。Whisper/LLM の固有名詞認識を補正する。誤認識を見つけたら readings に追記していけばよい。hit_count/last_used は voice_input.py が自動更新。",
+  "last_updated": "2026-04-09",
+  "terms": [
+    {
+      "term": "Claude Code",
+      "readings": ["クロードコード", "クラウドコード"],
+      "category": "tool",
+      "notes": "Anthropic の CLI",
+      "priority": 10,
+      "hit_count": 0,
+      "last_used": null
+    },
+    {
+      "term": "Whisper",
+      "readings": ["ウィスパー", "ウィスパ"],
+      "category": "tool",
+      "notes": "OpenAI の音声認識モデル",
+      "priority": 8,
+      "hit_count": 0,
+      "last_used": null
+    },
+    {
+      "term": "Ollama",
+      "readings": ["オラマ", "オーラマ"],
+      "category": "tool",
+      "notes": "ローカル LLM ランタイム",
+      "priority": 8,
+      "hit_count": 0,
+      "last_used": null
+    },
+    {
+      "term": "Qwen",
+      "readings": ["クウェン", "クエン"],
+      "category": "tool",
+      "notes": "Alibaba の LLM",
+      "priority": 7,
+      "hit_count": 0,
+      "last_used": null
+    },
+    {
+      "term": "TypeScript",
+      "readings": ["タイプスクリプト"],
+      "category": "tool",
+      "notes": "言語",
+      "priority": 7,
+      "hit_count": 0,
+      "last_used": null
+    },
+    {
+      "term": "Next.js",
+      "readings": ["ネクストジェーエス", "ネクストジェイエス"],
+      "category": "tool",
+      "notes": "React フレームワーク",
+      "priority": 7,
+      "hit_count": 0,
+      "last_used": null
+    },
+    {
+      "term": "Supabase",
+      "readings": ["スーパーベース", "スパベース"],
+      "category": "tool",
+      "notes": "BaaS",
+      "priority": 7,
+      "hit_count": 0,
+      "last_used": null
+    },
+    {
+      "term": "Kotonoha",
+      "readings": ["ことのは", "コトノハ"],
+      "category": "project",
+      "notes": "このツール自身",
+      "priority": 10,
+      "hit_count": 0,
+      "last_used": null
+    }
+  ]
+}
