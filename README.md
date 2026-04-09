@@ -74,7 +74,22 @@ python voice_input.py
 ```
 
 コンソールなしで起動したい場合は `pythonw.exe voice_input.py`。
-スタートアップに登録する用の PowerShell スクリプトが `create_shortcut.ps1` に入っている。
+
+### ショートカット作成 / スタートアップ登録
+
+付属の `create_shortcut.ps1` でショートカットを作れる。デフォルトはデスクトップに置く、**opt-in でスタートアップフォルダに登録**できる。
+
+```powershell
+# デスクトップにショートカットを作成 (デフォルト)
+.\create_shortcut.ps1
+
+# Windows のスタートアップフォルダに登録 (ログイン時に自動起動)
+.\create_shortcut.ps1 -Startup
+```
+
+`-Startup` を付けると Windows ログイン時に自動で常駐が立ち上がり、Whisper と Ollama のモデルロードが**バックグラウンドで完了してから**初回の録音を開始できるので、起動待ちの体感がゼロになる。
+
+解除するには `explorer shell:startup` で開いたフォルダから `VoiceInput.lnk` を削除する。
 
 ## 使い方
 
@@ -139,7 +154,7 @@ python voice_input.py
 ## トラブルシューティング
 
 - **Ctrl+V で貼り付けされない** → IME がオフになっているか、アクティブウィンドウに入力フォーカスが無い可能性。`output.auto_paste` を `false` にしてクリップボード貼り付けで運用する
-- **起動が遅い** → 初回は Whisper モデルのダウンロードが走る。2 回目以降は数秒で起動するはず
+- **起動が遅い** → 初回は Whisper モデルのダウンロードが走る。2 回目以降でも Whisper + Ollama の cold load で数秒かかるので、起動待ちを消したい場合は `.\create_shortcut.ps1 -Startup` で Windows スタートアップに登録してログイン時に裏でロードさせる
 - **VRAM 不足で落ちる** → `whisper.model` を `medium` → `small` に、`llm.model` を `qwen2.5:3b-instruct-q4_K_M` に落とす
 - **Ollama に繋がらない** → Ollama が起動しているか確認（タスクトレイにアイコンが出る）
 
