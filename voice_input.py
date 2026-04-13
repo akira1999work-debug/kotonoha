@@ -12,6 +12,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import math
+import re
 import os
 import queue
 import sys
@@ -568,6 +569,48 @@ class Transcriber:
         self.config = w
         print(f"[Whisper] 完了 ({time.perf_counter()-t0:.1f}秒)", flush=True)
 
+    # Whisper が無音/末尾でハルシネーションする既知フレーズ
+    HALLUCINATION_PHRASES = [
+        # --- 日本語: YouTube 動画エンディング系 ---
+        "ご視聴ありがとうございました",
+        "ご視聴ありがとうございます",
+        "ご清聴ありがとうございました",
+        "ご清聴ありがとうございます",
+        "最後までご視聴いただきありがとうございました",
+        "最後までご視聴ありがとうございました",
+        "見てくれてありがとう",
+        "チャンネル登録お願いします",
+        "チャンネル登録よろしくお願いします",
+        "高評価チャンネル登録よろしくお願いします",
+        "次の動画でお会いしましょう",
+        "おやすみなさい",
+        "お疲れ様でした",
+        "ありがとうございました",
+        # --- 中国語: 字幕クレジット / エンディング ---
+        "由 Amara.org 社群提供的字幕",
+        "由Amara.org社群提供的字幕",
+        "中文字幕志愿者",
+        "谢谢观看",
+        "谢谢观看 下集再见",
+        "请订阅我的频道",
+        "字幕由Amara.org社区提供",
+    ]
+
+    # 日本語以外の文字が混入していないか判定するための正規表現
+    # CJK Unified Ideographs は日中共通なので許可、中国語専用の簡体字範囲を検出
+    _RE_CHINESE_ONLY = re.compile(
+        r"[\u2E80-\u2EFF"   # CJK Radicals Supplement (中国語寄り)
+        r"\u3100-\u312F"    # Bopomofo (注音, 中国語専用)
+        r"\u31A0-\u31BF"    # Bopomofo Extended
+        r"]"
+    )
+    # 文全体が非日本語 (中国語/韓国語等) で構成されているかの簡易判定:
+    # ひらがな・カタカナが1文字もなければ日本語テキストではない可能性が高い
+    _RE_JAPANESE_KANA = re.compile(r"[\u3040-\u309F\u30A0-\u30FF]")
+
+    # no_speech_prob がこの閾値以上のセグメントはハルシネーションの疑い
+    NO_SPEECH_PROB_THRESHOLD = 0.5
+
     def transcribe(self, audio: np.ndarray) -> tuple[str, float]:
         t0 = time.perf_counter()
         segments, info = self.model.transcribe(
@@ -577,9 +620,56 @@ class Transcriber:
             initial_prompt=self.config.get("initial_prompt"),
             vad_filter=self.config.get("vad_filter", True),
         )
-        text = "".join(s.text for s in segments).strip()
+        # セグメント単位で no_speech_prob フィルタ
+        filtered_parts = []
+        for s in segments:
+            if s.no_speech_prob >= self.NO_SPEECH_PROB_THRESHOLD:
+                print(
+                    f"[Whisper] 無音セグメント除外 (prob={s.no_speech_prob:.2f}): {s.text.strip()[:30]}",
+                    flush=True,
+                )
+                continue
+            filtered_parts.append(s.text)
+        text = "".join(filtered_parts).strip()
+        text = self._strip_hallucinations(text)
         elapsed = (time.perf_counter() - t0) * 1000
         return text, elapsed
+
+    def _strip_hallucinations(self, text: str) -> str:
+        """末尾に付加されたハルシネーションフレーズを除去し、非日本語混入を検出する。"""
+        if not text:
+            return text
+
+        # 1) フレーズリストによる除去 (末尾一致 & 完全一致)
+        changed = True
+        while changed:
+            changed = False
+            for phrase in self.HALLUCINATION_PHRASES:
+                if text == phrase:
+                    return ""
+                if text.endswith(phrase):
+                    text = text[: -len(phrase)].rstrip("。、,.!！ ")
+                    changed = True
+
+        # 2) 中国語専用文字の混入チェック
+        if self._RE_CHINESE_ONLY.search(text):
+            print(f"[Whisper] 中国語文字混入を検出、除外: {text[:40]}", flush=True)
+            return ""
+
+        # 3) かな文字が一切ない長文は非日本語ハルシネーションの疑い
+        #    (漢字だけの短い単語は正当なケースがあるので 8文字以上に限定)
+        if len(text) >= 8 and not self._RE_JAPANESE_KANA.search(text):
+            print(f"[Whisper] 非日本語テキスト検出、除外: {text[:40]}", flush=True)
+            return ""
+
+        # 4) 同一フレーズの繰り返し検出 (3回以上)
+        if len(text) >= 6:
+            chunk = text[:len(text) // 3]
+            if chunk and text == chunk * (len(text) // len(chunk)) and len(text) // len(chunk) >= 3:
+                print(f"[Whisper] 繰り返しハルシネーション検出、除外: {chunk[:20]}x{len(text)//len(chunk)}", flush=True)
+                return ""
+
+        return text
 
 
 # ========== Ollama ==========
