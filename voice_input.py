@@ -678,6 +678,15 @@ class Formatter:
     # 日本語では使わない中国語助詞・簡体字。これが出たら中国語混入と判定して raw にフォールバック
     _CHINESE_MARKERS = frozenset("你吗呢请这让谢说给们个问时发没东车进简对过")
 
+    # LLM が日本語動詞を英訳してしまった時の検出用。技術固有名詞(React/API/useState 等)は
+    # 大文字含み or 複合語なので引っかからない。
+    _ENGLISH_TRANSLATION_MARKERS = frozenset([
+        "becoming", "should", "would", "could", "been",
+        "being", "doing", "making", "going", "taking",
+        "having", "getting", "able", "seems", "need",
+        "needs", "want", "wants", "think", "thinks",
+    ])
+
     def __init__(self, config: dict):
         self.llm_config = config["llm"]
         self.prompts = config["prompts"]
@@ -687,6 +696,13 @@ class Formatter:
         for c in text:
             if c in cls._CHINESE_MARKERS:
                 return c
+        return None
+
+    @classmethod
+    def _contains_english_translation(cls, text: str) -> str | None:
+        for word in re.findall(r"[A-Za-z]+", text):
+            if word.lower() in cls._ENGLISH_TRANSLATION_MARKERS:
+                return word
         return None
 
     def format(self, text: str, prompt_key: str = "default") -> tuple[str, float]:
@@ -721,6 +737,11 @@ class Formatter:
         marker = self._contains_chinese(formatted)
         if marker:
             print(f"[Formatter] 中国語混入検出 ('{marker}'), rawにフォールバック: {formatted}", flush=True)
+            return text, elapsed
+
+        en_marker = self._contains_english_translation(formatted)
+        if en_marker:
+            print(f"[Formatter] 英語翻訳検出 ('{en_marker}'), rawにフォールバック: {formatted}", flush=True)
             return text, elapsed
 
         return formatted, elapsed
