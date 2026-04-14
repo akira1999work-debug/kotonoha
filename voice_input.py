@@ -675,9 +675,19 @@ class Transcriber:
 # ========== Ollama ==========
 
 class Formatter:
+    # 日本語では使わない中国語助詞・簡体字。これが出たら中国語混入と判定して raw にフォールバック
+    _CHINESE_MARKERS = frozenset("你吗呢请这让谢说给们个问时发没东车进简对过")
+
     def __init__(self, config: dict):
         self.llm_config = config["llm"]
         self.prompts = config["prompts"]
+
+    @classmethod
+    def _contains_chinese(cls, text: str) -> str | None:
+        for c in text:
+            if c in cls._CHINESE_MARKERS:
+                return c
+        return None
 
     def format(self, text: str, prompt_key: str = "default") -> tuple[str, float]:
         system = self.prompts.get(prompt_key, self.prompts["default"])
@@ -706,7 +716,14 @@ class Formatter:
             print(f"[Formatter] エラー: {e}", flush=True)
             return text, 0.0
         elapsed = (time.perf_counter() - t0) * 1000
-        return body.get("response", text).strip(), elapsed
+        formatted = body.get("response", text).strip()
+
+        marker = self._contains_chinese(formatted)
+        if marker:
+            print(f"[Formatter] 中国語混入検出 ('{marker}'), rawにフォールバック: {formatted}", flush=True)
+            return text, elapsed
+
+        return formatted, elapsed
 
     def warmup(self):
         try:
