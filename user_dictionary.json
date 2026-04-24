@@ -1,7 +1,7 @@
 {
   "version": 2,
   "description": "Kotonoha ユーザー辞書。Whisper/LLM の固有名詞認識を補正する。誤認識を見つけたら readings に追記していけばよい。hit_count/last_used は voice_input.py が自動更新。",
-  "last_updated": "2026-04-15",
+  "last_updated": "2026-04-19",
   "_log": "2026-04-14: EdenQuest追加（エレンクエスト等の誤認識対策）",
   "terms": [
     {
@@ -13,8 +13,8 @@
       "category": "tool",
       "notes": "Anthropic の CLI",
       "priority": 10,
-      "hit_count": 1,
-      "last_used": "2026-04-14"
+      "hit_count": 4,
+      "last_used": "2026-04-15"
     },
     {
       "term": "Whisper",
@@ -111,8 +111,8 @@
       "category": "project",
       "notes": "中学生向けゲーミフィケーション学習プラットフォーム",
       "priority": 10,
-      "hit_count": 0,
-      "last_used": null
+      "hit_count": 8,
+      "last_used": "2026-04-19"
     }
   ]
 }
