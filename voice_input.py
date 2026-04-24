@@ -328,27 +328,45 @@ def score_and_filter(terms: list, top_n: int) -> list:
 
 
 def build_grouped_llm_hint(terms: list) -> str:
-    """category 別にグルーピングした LLM 用ヒントブロックを生成する。"""
+    """誤認識→正解 の置換マップ形式で LLM 用ヒントブロックを生成する。
+
+    freeflow#125 / OpenAI Cookbook の misspelling correction パターンに基づく。
+    readings (観測された誤認識) を左辺、term を右辺に置いて明示的に提示することで、
+    7B 級のローカルモデルでも編集距離が近い固有名詞を安定して訂正できる。"""
     if not terms:
         return ""
-    groups: dict[str, list[str]] = {}
+    groups: dict[str, list[tuple[str, list[str]]]] = {}
     order: list[str] = []
     for t in terms:
         cat = t.get("category", "other")
+        term = t.get("term")
+        readings = [r for r in (t.get("readings") or []) if r and r != term]
+        if not term:
+            continue
         if cat not in groups:
             groups[cat] = []
             order.append(cat)
-        groups[cat].append(t["term"])
-    # 表示順: person → project → tool → concept → other、以降は出現順
+        groups[cat].append((term, readings))
+
     preferred = ["person", "project", "tool", "concept", "other"]
     ordered_cats = [c for c in preferred if c in groups] + [
         c for c in order if c not in preferred
     ]
-    lines = ["\n\n【このユーザーがよく使う固有名詞】"]
+    lines = ["\n\n【誤認識→正解 置換マップ(このマップの右辺の表記に揃える)】"]
     for cat in ordered_cats:
         label = CATEGORY_LABEL.get(cat, cat)
-        lines.append(f"{label}: {'、'.join(groups[cat])}")
-    lines.append("音が近い誤認識を発見したら、上記のいずれかに修正してください。")
+        lines.append(f"[{label}]")
+        for term, readings in groups[cat]:
+            if readings:
+                lhs = " / ".join(readings)
+                lines.append(f"  {lhs} → {term}")
+            else:
+                lines.append(f"  {term}")
+    lines.append(
+        "ルール: 左辺に音韻的に近い箇所のみ右辺に置換する。"
+        "編集距離1〜2文字以内に限定し、語順・語尾・助詞は変えない。"
+        "判定不能なら原文のまま残す。"
+    )
     return "\n".join(lines)
 
 
@@ -362,8 +380,11 @@ def load_config() -> dict:
         # Whisper: top-35 (initial_prompt 224 トークン制限を考慮)
         whisper_terms = score_and_filter(terms, WHISPER_DICT_TOP_N)
         current_prompt = config.get("whisper", {}).get("initial_prompt", "")
-        extra = ", ".join(t["term"] for t in whisper_terms)
-        config["whisper"]["initial_prompt"] = f"{current_prompt}, {extra}".strip(", ")
+        # 自然文プロンプトに既出の term は CSV 追記から除外してトークンを節約
+        missing = [t["term"] for t in whisper_terms if t["term"] not in current_prompt]
+        if missing:
+            extra = "、".join(missing)
+            config["whisper"]["initial_prompt"] = f"{current_prompt} 固有名詞: {extra}".strip()
 
         # LLM: top-60 を category 別グルーピングで注入
         llm_terms = score_and_filter(terms, LLM_DICT_TOP_N)
@@ -551,6 +572,19 @@ class Recorder:
             return np.zeros(0, dtype=np.float32)
         return np.concatenate(frames_copy).flatten()
 
+    def get_recent_audio(self, seconds: float) -> np.ndarray:
+        """直近 seconds 秒分だけ返す (リアルタイム preview 専用)。
+        累積全体を毎回 Whisper に投げると O(n^2) 的に重くなるので、
+        preview 用には末尾の短い窓だけを返す。最終確定時は stop_recording() 側で全音声を使う。"""
+        if not self.frames:
+            return np.zeros(0, dtype=np.float32)
+        frames_copy = list(self.frames)
+        audio = np.concatenate(frames_copy).flatten()
+        n = int(self.sample_rate * seconds)
+        if n > 0 and len(audio) > n:
+            return audio[-n:]
+        return audio
+
 
 # ========== Whisper ==========
 
@@ -619,6 +653,15 @@ class Transcriber:
             beam_size=self.config["beam_size"],
             initial_prompt=self.config.get("initial_prompt"),
             vad_filter=self.config.get("vad_filter", True),
+            # 幻覚対策 (arXiv 2501.11378 / openai/whisper#2151 の推奨値)
+            condition_on_previous_text=self.config.get(
+                "condition_on_previous_text", False
+            ),
+            no_speech_threshold=self.config.get("no_speech_threshold", 0.3),
+            compression_ratio_threshold=self.config.get(
+                "compression_ratio_threshold", 2.4
+            ),
+            temperature=self.config.get("temperature", 0.0),
         )
         # セグメント単位で no_speech_prob フィルタ
         filtered_parts = []
@@ -857,6 +900,12 @@ class Overlay:
         self.waveform_bars = 32
         self.amps = deque([0.0] * self.waveform_bars, maxlen=self.waveform_bars)
         self._amp_smoothed = 0.0  # EMA smoothing
+
+        # Animation cadence — config の overlay.fps を尊重し、状況別に間引く
+        fps_cfg = int(self.config.get("fps", 30)) or 30
+        self._tick_active_ms = max(16, int(1000 / fps_cfg))  # 録音中 / 遷移中
+        self._tick_idle_ms = max(50, int(1000 / max(10, fps_cfg // 2)))  # 待機中
+        self._tick_hidden_ms = 250  # 非表示時は 4fps まで落とす
 
         # State
         self.is_recording = False
@@ -1524,7 +1573,15 @@ class Overlay:
         if self.visible:
             self._render()
 
-        self.root.after(16, self._animate)
+        # 次ティックは状況に応じて遅らせる
+        if not self.visible:
+            next_delay = self._tick_hidden_ms
+        elif self.is_recording or self.transitioning or self.intro_progress < 1.0:
+            next_delay = self._tick_active_ms
+        else:
+            # アイドル時もマウスホバー判定と微アニメは続けるが間隔を伸ばす
+            next_delay = self._tick_idle_ms
+        self.root.after(next_delay, self._animate)
 
     # ---------- レンダリング ----------
 
@@ -2286,10 +2343,15 @@ class VoiceInputApp:
     def _realtime_loop(self):
         """
         高頻度 Whisper で preview を更新 (≈0.5秒ごと)。
-        LLM 整形はバックグラウンドスレッドで走らせ、preview を止めない。
+        preview は直近 window_sec 秒だけを再 transcribe して O(n^2) を避ける。
+        LLM 整形はバックグラウンドスレッドで、変化が十分大きい時だけ発火する。
         """
         interval = self.realtime_config.get("interval_sec", 0.5)
         min_audio = self.realtime_config.get("min_audio_sec", 0.4)
+        window_sec = float(self.realtime_config.get("window_sec", 5.0))
+        use_llm = bool(self.realtime_config.get("use_llm_format", False))
+        llm_min_chars = int(self.realtime_config.get("llm_min_chars", 8))
+        llm_min_diff = int(self.realtime_config.get("llm_min_diff_chars", 4))
         sr = self.recorder.sample_rate
 
         while not self._realtime_stop_event.is_set():
@@ -2297,7 +2359,8 @@ class VoiceInputApp:
                 break
             if not self.is_recording:
                 break
-            audio = self.recorder.get_current_audio()
+            # preview 用は直近窓だけ (最終確定は stop 時に全音声で再 transcribe される)
+            audio = self.recorder.get_recent_audio(window_sec)
             if len(audio) / sr < min_audio:
                 continue
 
@@ -2315,13 +2378,21 @@ class VoiceInputApp:
             # 前回と同じ raw なら何もしない (無音時の無駄なループ防止)
             if raw_text == self._last_raw_text:
                 continue
+            prev_text = self._last_raw_text
             self._last_raw_text = raw_text
 
             if self.overlay:
                 self.overlay.set_preview_text(raw_text)
                 print(f"[Preview raw] {raw_text[-30:]}", flush=True)
 
-            # LLM 整形をバックグラウンドで (変更があった時だけ)
+            # LLM 整形はオプション。短すぎる/差分が小さい preview はスキップして
+            # Ollama の GPU/CPU 負荷を抑える
+            if not use_llm:
+                continue
+            if len(raw_text) < llm_min_chars:
+                continue
+            if prev_text and abs(len(raw_text) - len(prev_text)) < llm_min_diff:
+                continue
             self._llm_background_format(raw_text)
 
     def _stop_and_process(self):
