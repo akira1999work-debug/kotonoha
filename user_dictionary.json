@@ -1,9 +1,90 @@
 {
   "version": 2,
   "description": "Kotonoha ユーザー辞書。Whisper/LLM の固有名詞認識を補正する。誤認識を見つけたら readings に追記していけばよい。hit_count/last_used は voice_input.py が自動更新。",
-  "last_updated": "2026-04-19",
-  "_log": "2026-04-14: EdenQuest追加（エレンクエスト等の誤認識対策）",
+  "last_updated": "2026-06-20",
+  "_log": "2026-04-14: EdenQuest追加（エレンクエスト等の誤認識対策） / 2026-06-10: ユーロックテクノパーツ追加（koki保有の非上場株、予測的追加） / 2026-06-11: MASSOULS・マスソウルズ追加（SF大作漫画プロジェクト、予測的追加） / 2026-06-13: ソウロン追加（MASSOULS作中の造語＝精神エネルギー、予測的追加） / 2026-06-19: 椙杜追加（koki本人の姓。スギノモリ等の誤変換対策） / 2026-06-20: PayPay追加（ペイペイがPayPal/ペイパルに化ける誤認識対策。koki保有銘柄PAYP）",
   "terms": [
+    {
+      "term": "PayPay",
+      "readings": [
+        "ペイペイ",
+        "ペイパル",
+        "PayPal",
+        "Paypal",
+        "ペイパール",
+        "ペイパー",
+        "ペイパイ"
+      ],
+      "category": "company",
+      "notes": "koki保有銘柄（NASDAQ: PAYP）。決済スーパーアプリ。日本語発音『ペイペイ』が学習データで一般的な『PayPal/ペイパル』に化けるのを矯正。PayPalとは別会社なので必ずPayPayに直す",
+      "priority": 9,
+      "hit_count": 0,
+      "last_used": null
+    },
+    {
+      "term": "椙杜",
+      "readings": [
+        "すぎもり",
+        "すぎのもり",
+        "スギモリ",
+        "スギノモリ",
+        "杉森",
+        "杉杜",
+        "杉野森",
+        "椙森"
+      ],
+      "category": "person",
+      "notes": "koki本人の姓。椙杜こうき（コウキ スギノモリ）。Zoom表示名は『スギノモリ』だが正しい漢字表記は『椙杜』",
+      "priority": 9,
+      "hit_count": 0,
+      "last_used": null
+    },
+    {
+      "term": "ソウロン",
+      "readings": [
+        "ソウロン",
+        "争論",
+        "双論",
+        "ソーロン",
+        "総論",
+        "ソウロング"
+      ],
+      "category": "project",
+      "notes": "MASSOULS作中の造語。霊量子（soul+-on）＝魂を構成する精神エネルギー。タイトルMASSOULSと同語源",
+      "priority": 8,
+      "hit_count": 0,
+      "last_used": null
+    },
+    {
+      "term": "MASSOULS",
+      "readings": [
+        "マスソウルズ",
+        "マッソウルズ",
+        "マスソールズ",
+        "マスソウルス",
+        "マスソウル"
+      ],
+      "category": "project",
+      "notes": "koki のSF大作漫画プロジェクト。作中の発症者の呼称も「マスソウルズ」（単体はマスソウル）",
+      "priority": 9,
+      "hit_count": 0,
+      "last_used": null
+    },
+    {
+      "term": "ユーロックテクノパーツ",
+      "readings": [
+        "ユーロックテクノパーツ",
+        "ユーロック テクノ パーツ",
+        "ユーロックテクノパーズ",
+        "湯ロックテクノパーツ",
+        "ユーロックテクノパート"
+      ],
+      "category": "company",
+      "notes": "株式会社ユーロックテクノパーツ。kokiが株式50万円分を保有する非上場企業",
+      "priority": 7,
+      "hit_count": 0,
+      "last_used": null
+    },
     {
       "term": "Claude Code",
       "readings": [
@@ -13,8 +94,8 @@
       "category": "tool",
       "notes": "Anthropic の CLI",
       "priority": 10,
-      "hit_count": 4,
-      "last_used": "2026-04-15"
+      "hit_count": 5,
+      "last_used": "2026-05-01"
     },
     {
       "term": "Whisper",
@@ -111,8 +192,8 @@
       "category": "project",
       "notes": "中学生向けゲーミフィケーション学習プラットフォーム",
       "priority": 10,
-      "hit_count": 8,
-      "last_used": "2026-04-19"
+      "hit_count": 11,
+      "last_used": "2026-04-30"
     }
   ]
 }
