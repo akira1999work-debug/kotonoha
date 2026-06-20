@@ -7,6 +7,14 @@ Pillow
 pycairo
 faster-whisper
 
+# CUDA runtime libs for ctranslate2 (GPU 推論)。
+# torch 非同居のクリーン venv では cuBLAS/cuDNN を torch から借りられないため
+# 明示的に入れる。voice_input.py の _add_nvidia_cuda_dlls() が起動時に
+# これらの DLL ディレクトリを探索パスへ追加する。
+# (torch がある環境では不要だが、入れておいても無害)
+nvidia-cublas-cu12 ; sys_platform == "win32"
+nvidia-cudnn-cu12 ; sys_platform == "win32"
+
 # Optional (Windows tray / active-window detection)
 pystray
 pywin32 ; sys_platform == "win32"

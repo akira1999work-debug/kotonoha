@@ -250,6 +250,47 @@ except ImportError:
 # from faster_whisper import WhisperModel  # 遅延化
 
 
+def _add_nvidia_cuda_dlls() -> None:
+    """ctranslate2 が必要とする cuBLAS/cuDNN を、torch 非同居のクリーン venv でも
+    見つけられるようにする。
+
+    nvidia-cublas-cu12 / nvidia-cudnn-cu12 (pip) は DLL を
+    site-packages/nvidia/*/bin に置くが、Windows の DLL 探索パスには自動で
+    入らないため、ここで明示的に PATH 前置 + add_dll_directory する。
+    これをしないと encode 時に「cublas64_12.dll is not found」で落ちる。
+
+    nvidia パッケージが無い環境 (旧 Microsoft Store Python + torch 経由で
+    cuBLAS/cuDNN を得ていた構成等) では該当 dir が存在せず no-op になるので、
+    どちらの環境でも安全に動く。"""
+    import glob
+    import site
+
+    roots = list(site.getsitepackages())
+    try:
+        roots.append(site.getusersitepackages())
+    except Exception:
+        pass
+
+    dirs: list[str] = []
+    for root in roots:
+        for d in glob.glob(os.path.join(root, "nvidia", "*", "bin")):
+            if os.path.isdir(d) and d not in dirs:
+                dirs.append(d)
+    if not dirs:
+        return
+
+    os.environ["PATH"] = os.pathsep.join(dirs) + os.pathsep + os.environ.get("PATH", "")
+    for d in dirs:
+        try:
+            os.add_dll_directory(d)
+        except Exception:
+            pass
+    print(f"[CUDA] nvidia DLL dir 追加: {len(dirs)} 件", flush=True)
+
+
+_add_nvidia_cuda_dlls()
+
+
 CONFIG_PATH = Path(__file__).parent / "config.json"
 
 # 単一インスタンスロック (グローバルで保持しないと GC で閉じてしまう)
@@ -785,6 +826,17 @@ class Formatter:
         en_marker = self._contains_english_translation(formatted)
         if en_marker:
             print(f"[Formatter] 英語翻訳検出 ('{en_marker}'), rawにフォールバック: {formatted}", flush=True)
+            return text, elapsed
+
+        # 長さ暴走検出: 整形器が回答・解説を始めると出力が極端に伸びる。
+        # 短文での「。」「？」追加で誤発火しないよう、絶対差(+10)と比率(1.5x)のANDで判定。
+        in_len = len(text)
+        out_len = len(formatted)
+        if in_len > 0 and out_len > in_len * 1.5 and out_len - in_len > 10:
+            print(
+                f"[Formatter] 長さ暴走検出 ({in_len}→{out_len}文字), rawにフォールバック: {formatted}",
+                flush=True,
+            )
             return text, elapsed
 
         return formatted, elapsed
