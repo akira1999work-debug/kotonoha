@@ -1,0 +1,20 @@
+{
+  "description": "固有名詞の訂正精度を測る評価セット。speak を SAPI で読み上げて Whisper→LLM整形に通し、expect の正解表記が最終出力に現れるかを見る。speak は『誤認識されやすい読み』をあえて仮名で書く。",
+  "cases": [
+    { "id": "edenquest",  "speak": "エデンクエストの問題を追加したい",           "expect": "EdenQuest",           "prompt_key": "code" },
+    { "id": "claudecode", "speak": "クロードコードで直してほしい",               "expect": "Claude Code",         "prompt_key": "code" },
+    { "id": "sugimori",   "speak": "スギノモリさんに連絡しておいて",             "expect": "椙杜",                "prompt_key": "casual" },
+    { "id": "kotonoha",   "speak": "コトノハの辞書を更新した",                   "expect": "Kotonoha",            "prompt_key": "code" },
+    { "id": "ollama",     "speak": "オラマでモデルを動かしている",               "expect": "Ollama",              "prompt_key": "code" },
+    { "id": "qwen",       "speak": "クウェンの七ビーを使っている",               "expect": "Qwen",                "prompt_key": "code" },
+    { "id": "supabase",   "speak": "スーパーベースに接続できない",               "expect": "Supabase",            "prompt_key": "code" },
+    { "id": "nextjs",     "speak": "ネクストジェーエスでビルドする",             "expect": "Next.js",             "prompt_key": "code" },
+    { "id": "typescript", "speak": "タイプスクリプトの型が合わない",             "expect": "TypeScript",          "prompt_key": "code" },
+    { "id": "whisper",    "speak": "ウィスパーで文字起こしする",                 "expect": "Whisper",             "prompt_key": "code" },
+    { "id": "paypay",     "speak": "ペイペイの株価を確認したい",                 "expect": "PayPay",              "prompt_key": "casual" },
+    { "id": "massouls",   "speak": "マスソウルズの脚本を書いている",             "expect": "MASSOULS",            "prompt_key": "casual" },
+    { "id": "souron",     "speak": "ソウロンという概念が出てくる",               "expect": "ソウロン",            "prompt_key": "casual" },
+    { "id": "hakushokai", "speak": "ハクショウカイというカルト組織が出る",       "expect": "白照会",              "prompt_key": "casual" },
+    { "id": "eurock",     "speak": "ユーロックテクノパーツの株を持っている",     "expect": "ユーロックテクノパーツ", "prompt_key": "casual" }
+  ]
+}

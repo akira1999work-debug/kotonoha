@@ -1,0 +1,176 @@
+{
+  "label": "02-deterministic-replace",
+  "total": 15,
+  "asr_score": 10,
+  "final_score": 11,
+  "whisper_model": "large-v3-turbo",
+  "llm_model": "qwen2.5:7b-instruct-q4_K_M",
+  "use_hotwords": false,
+  "results": [
+    {
+      "id": "edenquest",
+      "expect": "EdenQuest",
+      "raw": "EdenQuestの問題を追加したい。",
+      "formatted": "EdenQuestの問題を追加したい。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 444,
+      "llm_ms": 725
+    },
+    {
+      "id": "claudecode",
+      "expect": "Claude Code",
+      "raw": "Claude Codeで直してほしい。",
+      "formatted": "Claude Codeで直してほしい。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 152,
+      "llm_ms": 299
+    },
+    {
+      "id": "sugimori",
+      "expect": "椙杜",
+      "raw": "杉の森さんに連絡しておいて。",
+      "formatted": "杉杜さんに連絡しておいて。",
+      "asr_ok": false,
+      "final_ok": false,
+      "guard": "",
+      "whisper_ms": 158,
+      "llm_ms": 632
+    },
+    {
+      "id": "kotonoha",
+      "expect": "Kotonoha",
+      "raw": "Kotonohaの辞書を更新した。",
+      "formatted": "Kotonohaの辞書を更新した。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 159,
+      "llm_ms": 659
+    },
+    {
+      "id": "ollama",
+      "expect": "Ollama",
+      "raw": "オラマでモデルを動かしている。",
+      "formatted": "Ollamaでモデルを動かしている。",
+      "asr_ok": false,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 156,
+      "llm_ms": 341
+    },
+    {
+      "id": "qwen",
+      "expect": "Qwen",
+      "raw": "空演の7Bを使っている。",
+      "formatted": "空演の7Bを使っています。",
+      "asr_ok": false,
+      "final_ok": false,
+      "guard": "",
+      "whisper_ms": 153,
+      "llm_ms": 335
+    },
+    {
+      "id": "supabase",
+      "expect": "Supabase",
+      "raw": "Supabaseに接続できない。",
+      "formatted": "Supabaseに接続できない。？",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 160,
+      "llm_ms": 315
+    },
+    {
+      "id": "nextjs",
+      "expect": "Next.js",
+      "raw": "Next.jsでビルドする。",
+      "formatted": "Next.jsでビルドします。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 150,
+      "llm_ms": 293
+    },
+    {
+      "id": "typescript",
+      "expect": "TypeScript",
+      "raw": "TypeScriptの型側はない。",
+      "formatted": "TypeScriptの型定義は含まれていません。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 151,
+      "llm_ms": 349
+    },
+    {
+      "id": "whisper",
+      "expect": "Whisper",
+      "raw": "Whisperで文字起こしする。",
+      "formatted": "Whisperで音声を書き起こす。？",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 152,
+      "llm_ms": 338
+    },
+    {
+      "id": "paypay",
+      "expect": "PayPay",
+      "raw": "PayPayの株価を確認したい。",
+      "formatted": "PayPayの株価を確認したい。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 163,
+      "llm_ms": 625
+    },
+    {
+      "id": "massouls",
+      "expect": "MASSOULS",
+      "raw": "MASSOULSの脚本を書いている。",
+      "formatted": "MASSOULSの脚本を書いている。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 155,
+      "llm_ms": 345
+    },
+    {
+      "id": "souron",
+      "expect": "ソウロン",
+      "raw": "総論という概念が出てくる。",
+      "formatted": "総論という概念が出てくる。",
+      "asr_ok": false,
+      "final_ok": false,
+      "guard": "",
+      "whisper_ms": 154,
+      "llm_ms": 304
+    },
+    {
+      "id": "hakushokai",
+      "expect": "白照会",
+      "raw": "白照会というカルト組織が出る。",
+      "formatted": "白照会というカルト組織が出る。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 158,
+      "llm_ms": 324
+    },
+    {
+      "id": "eurock",
+      "expect": "ユーロックテクノパーツ",
+      "raw": "U-LOKテクノパーツの株を持っている。",
+      "formatted": "U-LOKテクノパーツの株を持っている。",
+      "asr_ok": false,
+      "final_ok": false,
+      "guard": "",
+      "whisper_ms": 168,
+      "llm_ms": 357
+    }
+  ]
+}

@@ -25,3 +25,7 @@ desktop.ini
 
 # Local dictionary state (hit_count/last_used が汚れるため個人利用分は無視したい場合はこれを有効化)
 # user_dictionary.json
+
+# 評価ハーネスの生成物。音声は cases.json から再生成できるので追跡しない
+# (results/ は施策間の比較履歴として残す)
+eval/audio/

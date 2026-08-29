@@ -1,0 +1,176 @@
+{
+  "label": "01-baseline",
+  "total": 15,
+  "asr_score": 6,
+  "final_score": 7,
+  "whisper_model": "large-v3-turbo",
+  "llm_model": "qwen2.5:7b-instruct-q4_K_M",
+  "use_hotwords": false,
+  "results": [
+    {
+      "id": "edenquest",
+      "expect": "EdenQuest",
+      "raw": "エデンクエストの問題を追加したい。",
+      "formatted": "エデンクエストの問題を追加したい。",
+      "asr_ok": false,
+      "final_ok": false,
+      "guard": "",
+      "whisper_ms": 539,
+      "llm_ms": 6556
+    },
+    {
+      "id": "claudecode",
+      "expect": "Claude Code",
+      "raw": "クロードコードで直してほしい。",
+      "formatted": "クロードコードで直してほしい。",
+      "asr_ok": false,
+      "final_ok": false,
+      "guard": "",
+      "whisper_ms": 155,
+      "llm_ms": 324
+    },
+    {
+      "id": "sugimori",
+      "expect": "椙杜",
+      "raw": "杉の森さんに連絡しておいて。",
+      "formatted": "杉杜さんに連絡しておいて。",
+      "asr_ok": false,
+      "final_ok": false,
+      "guard": "",
+      "whisper_ms": 159,
+      "llm_ms": 867
+    },
+    {
+      "id": "kotonoha",
+      "expect": "Kotonoha",
+      "raw": "コトノハの辞書を更新した。",
+      "formatted": "コトノハの辞書を更新した。",
+      "asr_ok": false,
+      "final_ok": false,
+      "guard": "",
+      "whisper_ms": 159,
+      "llm_ms": 690
+    },
+    {
+      "id": "ollama",
+      "expect": "Ollama",
+      "raw": "オラマでモデルを動かしている。",
+      "formatted": "Ollamaでモデルを動かしている。",
+      "asr_ok": false,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 161,
+      "llm_ms": 2333
+    },
+    {
+      "id": "qwen",
+      "expect": "Qwen",
+      "raw": "空演の7Bを使っている。",
+      "formatted": "空演の7Bを使っています。",
+      "asr_ok": false,
+      "final_ok": false,
+      "guard": "",
+      "whisper_ms": 153,
+      "llm_ms": 320
+    },
+    {
+      "id": "supabase",
+      "expect": "Supabase",
+      "raw": "スーパーベースに接続できない。",
+      "formatted": "スーパーベースに接続できません。",
+      "asr_ok": false,
+      "final_ok": false,
+      "guard": "",
+      "whisper_ms": 157,
+      "llm_ms": 2291
+    },
+    {
+      "id": "nextjs",
+      "expect": "Next.js",
+      "raw": "Next.jsでビルドする。",
+      "formatted": "Next.jsでビルドします。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 154,
+      "llm_ms": 2095
+    },
+    {
+      "id": "typescript",
+      "expect": "TypeScript",
+      "raw": "TypeScriptの型側はない。",
+      "formatted": "TypeScriptの型定義は含まれていません。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 162,
+      "llm_ms": 336
+    },
+    {
+      "id": "whisper",
+      "expect": "Whisper",
+      "raw": "Whisperで文字起こしする。",
+      "formatted": "Whisperで音声を書き起こす。？",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 157,
+      "llm_ms": 349
+    },
+    {
+      "id": "paypay",
+      "expect": "PayPay",
+      "raw": "PayPayの株価を確認したい。",
+      "formatted": "PayPayの株価を確認したい。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 160,
+      "llm_ms": 624
+    },
+    {
+      "id": "massouls",
+      "expect": "MASSOULS",
+      "raw": "MASSOULSの脚本を書いている。",
+      "formatted": "MASSOULSの脚本を書いている。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 157,
+      "llm_ms": 356
+    },
+    {
+      "id": "souron",
+      "expect": "ソウロン",
+      "raw": "総論という概念が出てくる。",
+      "formatted": "総論という概念が出てくる。",
+      "asr_ok": false,
+      "final_ok": false,
+      "guard": "",
+      "whisper_ms": 159,
+      "llm_ms": 319
+    },
+    {
+      "id": "hakushokai",
+      "expect": "白照会",
+      "raw": "白照会というカルト組織が出る。",
+      "formatted": "白照会というカルト組織が出る。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "whisper_ms": 162,
+      "llm_ms": 321
+    },
+    {
+      "id": "eurock",
+      "expect": "ユーロックテクノパーツ",
+      "raw": "U-LOKテクノパーツの株を持っている。",
+      "formatted": "U-LOKテクノパーツの株を持っている。",
+      "asr_ok": false,
+      "final_ok": false,
+      "guard": "",
+      "whisper_ms": 167,
+      "llm_ms": 366
+    }
+  ]
+}

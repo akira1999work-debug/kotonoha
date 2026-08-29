@@ -423,6 +423,54 @@ def build_grouped_llm_hint(terms: list) -> str:
     return "\n".join(lines)
 
 
+# 決定的な辞書置換で採用する reading の最小長。
+# 3文字以下は一般語に埋まって誤爆する (「クエン」→クエン酸 / 「オラマ」など)。
+DETERMINISTIC_MIN_READING_LEN = 4
+
+
+def _has_kanji(s: str) -> bool:
+    return any("一" <= c <= "鿿" for c in s)
+
+
+def build_replacement_rules(terms: list) -> list[tuple[str, str]]:
+    """reading -> term の決定的置換ルールを作る。
+
+    LLM 任せの訂正は 7B では取りこぼしが多い (2026-08-30 実測で整形層の寄与は
+    15件中 +1 のみ) ので、確実に直せるものはコードで直す。ただし誤爆は
+    LLM の取りこぼしより害が大きいため、次の 2 条件を満たす reading だけ使う:
+
+    - 漢字を含まない (「総論」「杉杜」「白商会」等は一般語として正しく使われうる)
+    - 4 文字以上 (短い片仮名は他語の一部に埋まる)
+
+    長い reading から順に適用して、部分一致による取りこぼしを防ぐ。
+    """
+    rules: list[tuple[str, str]] = []
+    for t in terms:
+        term = t.get("term")
+        if not term:
+            continue
+        for r in t.get("readings") or []:
+            if not r or r == term:
+                continue
+            if _has_kanji(r):
+                continue
+            if len(r) < DETERMINISTIC_MIN_READING_LEN:
+                continue
+            rules.append((r, term))
+    rules.sort(key=lambda kv: len(kv[0]), reverse=True)
+    return rules
+
+
+def apply_replacements(text: str, rules: list[tuple[str, str]]) -> tuple[str, list[str]]:
+    """置換を適用し、(置換後テキスト, 適用したルールの説明) を返す。"""
+    applied: list[str] = []
+    for reading, term in rules:
+        if reading in text:
+            text = text.replace(reading, term)
+            applied.append(f"{reading}→{term}")
+    return text, applied
+
+
 def load_config() -> dict:
     with open(CONFIG_PATH, encoding="utf-8") as f:
         config = json.load(f)
@@ -483,9 +531,14 @@ def load_config() -> dict:
             if key in config.get("prompts", {}):
                 config["prompts"][key] += hint_block
 
+        # 決定的置換ルール。LLM の気まぐれに依存せずコードで直せるものを直す。
+        rules = build_replacement_rules(terms)
+        config["whisper"]["_replacement_rules"] = rules
+
         print(
             f"[Dictionary] {len(terms)} 件ロード "
-            f"(Whisper top-{len(whisper_terms)}, LLM top-{len(llm_terms)})",
+            f"(Whisper top-{len(whisper_terms)}, LLM top-{len(llm_terms)}, "
+            f"決定的置換 {len(rules)} ルール)",
             flush=True,
         )
 
@@ -768,6 +821,13 @@ class Transcriber:
             filtered_parts.append(s.text)
         text = "".join(filtered_parts).strip()
         text = self._strip_hallucinations(text)
+        # 決定的な固有名詞置換は LLM 整形より前に効かせる。整形後だと
+        # 「エデンQuest」のように形が崩れて reading と一致しなくなる。
+        rules = self.config.get("_replacement_rules") or []
+        if rules and text:
+            text, applied = apply_replacements(text, rules)
+            if applied:
+                print(f"[Dictionary] 置換適用: {', '.join(applied)}", flush=True)
         elapsed = (time.perf_counter() - t0) * 1000
         return text, elapsed
 
