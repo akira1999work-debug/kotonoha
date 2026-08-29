@@ -49,7 +49,8 @@
     "condition_on_previous_text": false,
     "no_speech_threshold": 0.3,
     "compression_ratio_threshold": 2.4,
-    "temperature": 0.0,
+    "use_hotwords": false,
+    "temperature": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
     "initial_prompt": "これは日本語の音声入力の書き起こしです。Claude CodeやCursorでTypeScript、React、Next.jsを使った開発、SupabaseやVercelへのデプロイ、ファインチューニングやリファクタリング、コンポーネント設計について話します。EdenQuestというプロジェクトや、Ollama、faster-whisper、Qwenなどのローカルな環境も扱います。句読点は「、」と「。」を使い、自然な話し言葉をそのまま書き起こします。"
   },
 

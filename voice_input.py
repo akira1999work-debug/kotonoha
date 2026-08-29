@@ -304,6 +304,18 @@ OVERLAY_STATE_PATH = Path(__file__).parent / "overlay_state.json"
 WHISPER_DICT_TOP_N = 35
 LLM_DICT_TOP_N = 60
 
+# initial_prompt は 224 トークンを超えると「末尾 224 トークンだけ有効・それより前は
+# 破棄」される (OpenAI Whisper prompting guide)。破棄は無警告なので、文字数で
+# 安全側に頭打ちさせる。2026-08-30 実測: ベース 227 文字 = 162 トークン
+# (約 0.71 tok/char)。辞書 15 件を足した状態で 290 文字 = 214 トークンと上限まで
+# 残り 10 しかなく、辞書を数件足すだけで静かに溢れる状態だった。
+WHISPER_PROMPT_CHAR_BUDGET = 290
+
+# hotwords は initial_prompt とは別枠で、かつ「最初のウィンドウにしか効かない」
+# 制約を受けない (faster-whisper v1.0.2 以降)。固有名詞はこちらにも流す。
+# 合算がデコード長 448 トークンに当たる既知 issue (#948) があるので上限を設ける。
+WHISPER_HOTWORDS_CHAR_BUDGET = 200
+
 CATEGORY_DEFAULT_PRIORITY = {"person": 10, "project": 8, "tool": 5, "concept": 3}
 CATEGORY_BONUS = {"person": 3, "project": 3, "tool": 1}
 CATEGORY_LABEL = {
@@ -424,8 +436,45 @@ def load_config() -> dict:
         # 自然文プロンプトに既出の term は CSV 追記から除外してトークンを節約
         missing = [t["term"] for t in whisper_terms if t["term"] not in current_prompt]
         if missing:
-            extra = "、".join(missing)
-            config["whisper"]["initial_prompt"] = f"{current_prompt} 固有名詞: {extra}".strip()
+            # 文字数予算に収まるところまでしか足さない (超過分は無警告で破棄されるため)
+            head = f"{current_prompt} 固有名詞: ".rstrip() + " "
+            kept: list[str] = []
+            for term in missing:
+                candidate = head + "、".join(kept + [term])
+                if len(candidate) > WHISPER_PROMPT_CHAR_BUDGET:
+                    break
+                kept.append(term)
+            if kept:
+                config["whisper"]["initial_prompt"] = (head + "、".join(kept)).strip()
+            dropped = len(missing) - len(kept)
+            if dropped:
+                print(
+                    f"[Dictionary] initial_prompt の文字数予算({WHISPER_PROMPT_CHAR_BUDGET})により "
+                    f"{dropped} 件を prompt から除外 (hotwords 側でカバー)",
+                    flush=True,
+                )
+
+        # hotwords: 既定 OFF。config の whisper.use_hotwords が true の時だけ有効。
+        #
+        # 2026-08-30 に TTS 音声で A/B 実測した結果、既定 ON にはできないと判断:
+        #  - 固有名詞の改善が観測できなかった (「エデンクエスト」「クロードコード」は
+        #    hotwords の有無に関わらず片仮名のままで、EdenQuest / Claude Code に
+        #    ならなかった)
+        #  - 現行の長い initial_prompt (214トークン) と併用すると反復崩壊を
+        #    再現的に起こした (「杉の字の字の字の…」が延々続く)
+        # 将来モデルやライブラリを更新した際に再評価できるよう、生成処理は残す。
+        if config.get("whisper", {}).get("use_hotwords"):
+            hot: list[str] = []
+            for t in whisper_terms:
+                term = t.get("term")
+                if not term:
+                    continue
+                if len(" ".join(hot + [term])) > WHISPER_HOTWORDS_CHAR_BUDGET:
+                    break
+                hot.append(term)
+            if hot:
+                config["whisper"]["hotwords"] = " ".join(hot)
+                print(f"[Dictionary] hotwords 有効: {len(hot)} 件", flush=True)
 
         # LLM: top-60 を category 別グルーピングで注入
         llm_terms = score_and_filter(terms, LLM_DICT_TOP_N)
@@ -693,6 +742,9 @@ class Transcriber:
             language=self.config["language"],
             beam_size=self.config["beam_size"],
             initial_prompt=self.config.get("initial_prompt"),
+            # hotwords は initial_prompt と違い最初のウィンドウに限定されない
+            # (faster-whisper v1.0.2+)。prefix 併用時は無効になるが未使用。
+            hotwords=self.config.get("hotwords"),
             vad_filter=self.config.get("vad_filter", True),
             # 幻覚対策 (arXiv 2501.11378 / openai/whisper#2151 の推奨値)
             condition_on_previous_text=self.config.get(
@@ -774,6 +826,92 @@ class Formatter:
     def __init__(self, config: dict):
         self.llm_config = config["llm"]
         self.prompts = config["prompts"]
+        # Ollama サーバの自動起動用。複数スレッド (realtime preview / 確定処理) から
+        # 同時に叩かれるので、起動試行は 1 本に直列化する。
+        self._server_lock = threading.Lock()
+        self._server_launch_failed = False
+
+    def _server_alive(self, timeout: float = 1.0) -> bool:
+        """Ollama サーバが応答するか。/api/tags は軽量なのでヘルスチェックに使う。"""
+        base = self.llm_config["ollama_url"].split("/api/")[0]
+        try:
+            with urllib.request.urlopen(f"{base}/api/tags", timeout=timeout):
+                return True
+        except Exception:
+            return False
+
+    def _find_ollama_exe(self) -> str | None:
+        """config 指定 → PATH → 既定インストール先 の順に探す。"""
+        cand = self.llm_config.get("ollama_exe")
+        if cand and Path(cand).exists():
+            return cand
+        import shutil
+        found = shutil.which("ollama")
+        if found:
+            return found
+        default = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Ollama" / "ollama.exe"
+        return str(default) if default.exists() else None
+
+    def ensure_server(self, wait_sec: float = 60.0) -> bool:
+        """
+        Ollama が落ちていたら `ollama serve` をデタッチ起動して待つ。
+
+        koki の運用では Ollama を Windows の自動起動に入れていない (ComfyUI 等と
+        VRAM を食い合うため。_quit() でも keep_alive=0 でアンロードしている)。
+        そのため「必要になった時だけ起動する」on-demand 方式にしている。
+        """
+        if self._server_alive():
+            return True
+        with self._server_lock:
+            # ロック待ちの間に他スレッドが起動を終えているかもしれない
+            if self._server_alive():
+                return True
+            if self._server_launch_failed:
+                return False
+
+            exe = self._find_ollama_exe()
+            if not exe:
+                print("[Formatter] Ollama の実行ファイルが見つからない。LLM整形をスキップします", flush=True)
+                self._server_launch_failed = True
+                return False
+
+            import subprocess
+            print(f"[Formatter] Ollama 未起動。自動起動します: {exe}", flush=True)
+            # 失敗理由を残す。DEVNULL に捨てると「起動したが応答しない」時に
+            # 原因が一切分からなくなる (2026-08-30 に実際にそれで詰まった)。
+            log_path = Path(__file__).with_name("ollama_serve.log")
+            try:
+                # CREATE_NO_WINDOW と DETACHED_PROCESS は併用不可
+                # (CreateProcess が ERROR_INVALID_PARAMETER を返す)。
+                # コンソール窓の抑止だけで足りるので CREATE_NO_WINDOW 単独にする。
+                # 子プロセスは job object に入れていないので kotonoha 終了後も残る。
+                log_f = open(log_path, "ab", buffering=0)
+                subprocess.Popen(
+                    [exe, "serve"],
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                    stdin=subprocess.DEVNULL,
+                    stdout=log_f,
+                    stderr=log_f,
+                )
+            except Exception as e:
+                print(f"[Formatter] Ollama 起動失敗: {e}", flush=True)
+                self._server_launch_failed = True
+                return False
+
+            deadline = time.perf_counter() + wait_sec
+            while time.perf_counter() < deadline:
+                if self._server_alive(timeout=1.0):
+                    print("[Formatter] Ollama 起動完了", flush=True)
+                    return True
+                time.sleep(0.5)
+
+            print(
+                f"[Formatter] Ollama が {wait_sec:.0f}秒 以内に応答しませんでした。"
+                f"原因は {log_path} を確認",
+                flush=True,
+            )
+            self._server_launch_failed = True
+            return False
 
     @classmethod
     def _contains_chinese(cls, text: str) -> str | None:
@@ -813,8 +951,18 @@ class Formatter:
             with urllib.request.urlopen(req, timeout=60) as resp:
                 body = json.loads(resp.read().decode("utf-8"))
         except Exception as e:
+            # セッション途中で Ollama が落ちた場合の自己修復。ensure_server() は
+            # _server_launch_failed で 1 セッション 1 回に制限されるので、
+            # 起動できない環境で毎回待たされることはない。
             print(f"[Formatter] エラー: {e}", flush=True)
-            return text, 0.0
+            if not self.ensure_server(wait_sec=10.0):
+                return text, 0.0
+            try:
+                with urllib.request.urlopen(req, timeout=60) as resp:
+                    body = json.loads(resp.read().decode("utf-8"))
+            except Exception as e2:
+                print(f"[Formatter] 再試行も失敗: {e2}", flush=True)
+                return text, 0.0
         elapsed = (time.perf_counter() - t0) * 1000
         formatted = body.get("response", text).strip()
 
@@ -842,10 +990,15 @@ class Formatter:
         return formatted, elapsed
 
     def warmup(self):
+        # 起動時はローダースレッドから呼ばれるので、ここで待つ分には UI を止めない。
+        # 先にサーバを起こしてからウォームアップすると、初回発話でのモデルロード
+        # 待ち (7B で 8〜9秒) を録音開始前に済ませられる。
         try:
+            if not self.ensure_server():
+                return
             self.format("こんにちは", "default")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[Formatter] ウォームアップ失敗: {e}", flush=True)
 
 
 # ========== アクティブウィンドウ検出 ==========
