@@ -442,6 +442,12 @@ def build_replacement_rules(terms: list) -> list[tuple[str, str]]:
     - 漢字を含まない (「総論」「杉杜」「白商会」等は一般語として正しく使われうる)
     - 4 文字以上 (短い片仮名は他語の一部に埋まる)
 
+    上の 2 条件は誤爆を防ぐ代わりに取りこぼす (「オラマ」は 3 文字なので弾かれ、
+    「空演」は漢字なので弾かれる)。一般語と衝突しないと判断できる reading は
+    辞書側の `safe_readings` に明示すれば、両方の条件を免除して置換対象にできる。
+    「空演」「オラマ」のような実在しない綴りが該当し、「総論」「杉森」のような
+    実在する語は入れない (そちらは LLM の文脈判断に任せる)。
+
     長い reading から順に適用して、部分一致による取りこぼしを防ぐ。
     """
     rules: list[tuple[str, str]] = []
@@ -449,8 +455,12 @@ def build_replacement_rules(terms: list) -> list[tuple[str, str]]:
         term = t.get("term")
         if not term:
             continue
+        allow = set(t.get("safe_readings") or t.get("safe_kanji_readings") or [])
         for r in t.get("readings") or []:
             if not r or r == term:
+                continue
+            if r in allow:
+                rules.append((r, term))
                 continue
             if _has_kanji(r):
                 continue

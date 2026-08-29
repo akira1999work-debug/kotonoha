@@ -1,12 +1,12 @@
 {
-  "label": "02-deterministic-replace",
+  "label": "04-qwen14b",
   "total": 15,
   "asr_score": 10,
-  "final_score": 11,
-  "mean_similarity": 0.919,
+  "final_score": 12,
+  "mean_similarity": 0.933,
   "truncations": 0,
   "whisper_model": "large-v3-turbo",
-  "llm_model": "qwen2.5:7b-instruct-q4_K_M",
+  "llm_model": "qwen2.5:14b-instruct-q4_K_M",
   "use_hotwords": false,
   "prompts": "config.json",
   "results": [
@@ -14,14 +14,14 @@
       "id": "edenquest",
       "expect": "EdenQuest",
       "raw": "EdenQuestの問題を追加したい。",
-      "formatted": "EdenQuestの問題を追加したい。",
+      "formatted": "EdenQuestの問題を追加したい。？",
       "asr_ok": true,
       "final_ok": true,
       "guard": "",
-      "similarity": 1.0,
+      "similarity": 0.974,
       "truncated": false,
-      "whisper_ms": 461,
-      "llm_ms": 1058
+      "whisper_ms": 433,
+      "llm_ms": 38644
     },
     {
       "id": "claudecode",
@@ -33,21 +33,21 @@
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 155,
-      "llm_ms": 333
+      "whisper_ms": 875,
+      "llm_ms": 6575
     },
     {
       "id": "sugimori",
       "expect": "椙杜",
       "raw": "杉の森さんに連絡しておいて。",
-      "formatted": "杉杜さんに連絡しておいて。",
+      "formatted": "councill杉杜さんに連絡しておいて。",
       "asr_ok": false,
       "final_ok": false,
-      "guard": "",
-      "similarity": 0.889,
+      "guard": "エラー",
+      "similarity": 0.686,
       "truncated": false,
-      "whisper_ms": 162,
-      "llm_ms": 924
+      "whisper_ms": 373,
+      "llm_ms": 64390
     },
     {
       "id": "kotonoha",
@@ -59,34 +59,34 @@
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 156,
-      "llm_ms": 690
+      "whisper_ms": 316,
+      "llm_ms": 10178
     },
     {
       "id": "ollama",
       "expect": "Ollama",
       "raw": "オラマでモデルを動かしている。",
-      "formatted": "Ollamaでモデルを動かしています。",
+      "formatted": "Ollamaでモデルを動かしている。",
       "asr_ok": false,
       "final_ok": true,
       "guard": "",
-      "similarity": 0.647,
+      "similarity": 0.727,
       "truncated": false,
-      "whisper_ms": 160,
-      "llm_ms": 347
+      "whisper_ms": 326,
+      "llm_ms": 7299
     },
     {
       "id": "qwen",
       "expect": "Qwen",
       "raw": "空演の7Bを使っている。",
-      "formatted": "空演の7Bを使っています。",
+      "formatted": "空演の7Bを使っている。",
       "asr_ok": false,
       "final_ok": false,
       "guard": "",
-      "similarity": 0.88,
+      "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 156,
-      "llm_ms": 325
+      "whisper_ms": 225,
+      "llm_ms": 3080
     },
     {
       "id": "supabase",
@@ -98,60 +98,60 @@
       "guard": "",
       "similarity": 0.97,
       "truncated": false,
-      "whisper_ms": 162,
-      "llm_ms": 350
+      "whisper_ms": 192,
+      "llm_ms": 7708
     },
     {
       "id": "nextjs",
       "expect": "Next.js",
       "raw": "Next.jsでビルドする。",
-      "formatted": "Next.jsでビルドします。",
-      "asr_ok": true,
-      "final_ok": true,
-      "guard": "",
-      "similarity": 0.897,
-      "truncated": false,
-      "whisper_ms": 151,
-      "llm_ms": 300
-    },
-    {
-      "id": "typescript",
-      "expect": "TypeScript",
-      "raw": "TypeScriptの型側はない。",
-      "formatted": "TypeScriptの型定義は含まれていません。",
-      "asr_ok": true,
-      "final_ok": true,
-      "guard": "",
-      "similarity": 0.732,
-      "truncated": false,
-      "whisper_ms": 154,
-      "llm_ms": 346
-    },
-    {
-      "id": "whisper",
-      "expect": "Whisper",
-      "raw": "Whisperで文字起こしする。",
-      "formatted": "Whisperで音声を文字にする。？",
-      "asr_ok": true,
-      "final_ok": true,
-      "guard": "",
-      "similarity": 0.765,
-      "truncated": false,
-      "whisper_ms": 152,
-      "llm_ms": 331
-    },
-    {
-      "id": "paypay",
-      "expect": "PayPay",
-      "raw": "PayPayの株価を確認したい。",
-      "formatted": "PayPayの株価を確認したい。",
+      "formatted": "Next.jsでビルドする。",
       "asr_ok": true,
       "final_ok": true,
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 158,
-      "llm_ms": 640
+      "whisper_ms": 191,
+      "llm_ms": 1804
+    },
+    {
+      "id": "typescript",
+      "expect": "TypeScript",
+      "raw": "TypeScriptの型側はない。",
+      "formatted": "TypeScriptの型定義はない。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "similarity": 0.914,
+      "truncated": false,
+      "whisper_ms": 189,
+      "llm_ms": 6736
+    },
+    {
+      "id": "whisper",
+      "expect": "Whisper",
+      "raw": "Whisperで文字起こしする。",
+      "formatted": "Whisperで文字起こしする。",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "similarity": 1.0,
+      "truncated": false,
+      "whisper_ms": 198,
+      "llm_ms": 2289
+    },
+    {
+      "id": "paypay",
+      "expect": "PayPay",
+      "raw": "PayPayの株価を確認したい。",
+      "formatted": "PayPayの株価を確認したい？",
+      "asr_ok": true,
+      "final_ok": true,
+      "guard": "",
+      "similarity": 0.938,
+      "truncated": false,
+      "whisper_ms": 201,
+      "llm_ms": 3987
     },
     {
       "id": "massouls",
@@ -163,21 +163,21 @@
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 160,
-      "llm_ms": 355
+      "whisper_ms": 202,
+      "llm_ms": 2530
     },
     {
       "id": "souron",
       "expect": "ソウロン",
       "raw": "総論という概念が出てくる。",
-      "formatted": "総論という概念が出てくる。",
+      "formatted": "ソウロンという概念が出てくる。",
       "asr_ok": false,
-      "final_ok": false,
+      "final_ok": true,
       "guard": "",
-      "similarity": 1.0,
+      "similarity": 0.786,
       "truncated": false,
-      "whisper_ms": 156,
-      "llm_ms": 312
+      "whisper_ms": 210,
+      "llm_ms": 2978
     },
     {
       "id": "hakushokai",
@@ -189,8 +189,8 @@
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 158,
-      "llm_ms": 328
+      "whisper_ms": 217,
+      "llm_ms": 1758
     },
     {
       "id": "eurock",
@@ -202,8 +202,8 @@
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 164,
-      "llm_ms": 360
+      "whisper_ms": 209,
+      "llm_ms": 3738
     }
   ]
 }

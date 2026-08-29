@@ -1,27 +1,27 @@
 {
-  "label": "02-deterministic-replace",
+  "label": "03-compact-prompt",
   "total": 15,
   "asr_score": 10,
   "final_score": 11,
-  "mean_similarity": 0.919,
-  "truncations": 0,
+  "mean_similarity": 0.86,
+  "truncations": 1,
   "whisper_model": "large-v3-turbo",
   "llm_model": "qwen2.5:7b-instruct-q4_K_M",
   "use_hotwords": false,
-  "prompts": "config.json",
+  "prompts": "eval\\prompts_compact.json",
   "results": [
     {
       "id": "edenquest",
       "expect": "EdenQuest",
       "raw": "EdenQuestの問題を追加したい。",
-      "formatted": "EdenQuestの問題を追加したい。",
+      "formatted": "EdenQuestに問題を追加したい。",
       "asr_ok": true,
       "final_ok": true,
       "guard": "",
-      "similarity": 1.0,
+      "similarity": 0.947,
       "truncated": false,
-      "whisper_ms": 461,
-      "llm_ms": 1058
+      "whisper_ms": 456,
+      "llm_ms": 670
     },
     {
       "id": "claudecode",
@@ -33,8 +33,8 @@
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 155,
-      "llm_ms": 333
+      "whisper_ms": 156,
+      "llm_ms": 297
     },
     {
       "id": "sugimori",
@@ -46,8 +46,8 @@
       "guard": "",
       "similarity": 0.889,
       "truncated": false,
-      "whisper_ms": 162,
-      "llm_ms": 924
+      "whisper_ms": 159,
+      "llm_ms": 619
     },
     {
       "id": "kotonoha",
@@ -59,21 +59,21 @@
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 156,
-      "llm_ms": 690
+      "whisper_ms": 155,
+      "llm_ms": 620
     },
     {
       "id": "ollama",
       "expect": "Ollama",
       "raw": "オラマでモデルを動かしている。",
-      "formatted": "Ollamaでモデルを動かしています。",
+      "formatted": "Ollamaでモデルを動かしている。",
       "asr_ok": false,
       "final_ok": true,
       "guard": "",
-      "similarity": 0.647,
+      "similarity": 0.727,
       "truncated": false,
-      "whisper_ms": 160,
-      "llm_ms": 347
+      "whisper_ms": 156,
+      "llm_ms": 324
     },
     {
       "id": "qwen",
@@ -85,21 +85,21 @@
       "guard": "",
       "similarity": 0.88,
       "truncated": false,
-      "whisper_ms": 156,
-      "llm_ms": 325
+      "whisper_ms": 152,
+      "llm_ms": 287
     },
     {
       "id": "supabase",
       "expect": "Supabase",
       "raw": "Supabaseに接続できない。",
-      "formatted": "Supabaseに接続できない。？",
+      "formatted": "Supabaseに接続できません。",
       "asr_ok": true,
       "final_ok": true,
       "guard": "",
-      "similarity": 0.97,
+      "similarity": 0.848,
       "truncated": false,
-      "whisper_ms": 162,
-      "llm_ms": 350
+      "whisper_ms": 158,
+      "llm_ms": 295
     },
     {
       "id": "nextjs",
@@ -111,47 +111,47 @@
       "guard": "",
       "similarity": 0.897,
       "truncated": false,
-      "whisper_ms": 151,
-      "llm_ms": 300
+      "whisper_ms": 153,
+      "llm_ms": 277
     },
     {
       "id": "typescript",
       "expect": "TypeScript",
       "raw": "TypeScriptの型側はない。",
-      "formatted": "TypeScriptの型定義は含まれていません。",
+      "formatted": "TypeScriptの型定義は存在しない。",
       "asr_ok": true,
       "final_ok": true,
       "guard": "",
-      "similarity": 0.732,
+      "similarity": 0.842,
       "truncated": false,
-      "whisper_ms": 154,
-      "llm_ms": 346
+      "whisper_ms": 152,
+      "llm_ms": 318
     },
     {
       "id": "whisper",
       "expect": "Whisper",
       "raw": "Whisperで文字起こしする。",
-      "formatted": "Whisperで音声を文字にする。？",
+      "formatted": "Whisperで音声を書き起こす。",
       "asr_ok": true,
       "final_ok": true,
       "guard": "",
-      "similarity": 0.765,
+      "similarity": 0.727,
       "truncated": false,
-      "whisper_ms": 152,
-      "llm_ms": 331
+      "whisper_ms": 155,
+      "llm_ms": 324
     },
     {
       "id": "paypay",
       "expect": "PayPay",
       "raw": "PayPayの株価を確認したい。",
-      "formatted": "PayPayの株価を確認したい。",
+      "formatted": "PayPayの株価を確認したい？",
       "asr_ok": true,
       "final_ok": true,
       "guard": "",
-      "similarity": 1.0,
+      "similarity": 0.938,
       "truncated": false,
-      "whisper_ms": 158,
-      "llm_ms": 640
+      "whisper_ms": 163,
+      "llm_ms": 645
     },
     {
       "id": "massouls",
@@ -163,47 +163,47 @@
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 160,
-      "llm_ms": 355
+      "whisper_ms": 155,
+      "llm_ms": 341
     },
     {
       "id": "souron",
       "expect": "ソウロン",
       "raw": "総論という概念が出てくる。",
-      "formatted": "総論という概念が出てくる。",
+      "formatted": "総論という概念が出てきます。",
       "asr_ok": false,
       "final_ok": false,
       "guard": "",
-      "similarity": 1.0,
+      "similarity": 0.815,
       "truncated": false,
-      "whisper_ms": 156,
-      "llm_ms": 312
+      "whisper_ms": 158,
+      "llm_ms": 300
     },
     {
       "id": "hakushokai",
       "expect": "白照会",
       "raw": "白照会というカルト組織が出る。",
-      "formatted": "白照会というカルト組織が出る。",
+      "formatted": "白照会。",
       "asr_ok": true,
       "final_ok": true,
       "guard": "",
-      "similarity": 1.0,
-      "truncated": false,
-      "whisper_ms": 158,
-      "llm_ms": 328
+      "similarity": 0.421,
+      "truncated": true,
+      "whisper_ms": 160,
+      "llm_ms": 241
     },
     {
       "id": "eurock",
       "expect": "ユーロックテクノパーツ",
       "raw": "U-LOKテクノパーツの株を持っている。",
-      "formatted": "U-LOKテクノパーツの株を持っている。",
+      "formatted": "U-LOK テクノパーツの株を持っている。",
       "asr_ok": false,
       "final_ok": false,
       "guard": "",
-      "similarity": 1.0,
+      "similarity": 0.976,
       "truncated": false,
-      "whisper_ms": 164,
-      "llm_ms": 360
+      "whisper_ms": 167,
+      "llm_ms": 366
     }
   ]
 }

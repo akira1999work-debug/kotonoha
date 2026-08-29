@@ -1,9 +1,9 @@
 {
-  "label": "02-deterministic-replace",
+  "label": "08-safe-readings",
   "total": 15,
-  "asr_score": 10,
-  "final_score": 11,
-  "mean_similarity": 0.919,
+  "asr_score": 13,
+  "final_score": 13,
+  "mean_similarity": 0.93,
   "truncations": 0,
   "whisper_model": "large-v3-turbo",
   "llm_model": "qwen2.5:7b-instruct-q4_K_M",
@@ -14,14 +14,14 @@
       "id": "edenquest",
       "expect": "EdenQuest",
       "raw": "EdenQuestの問題を追加したい。",
-      "formatted": "EdenQuestの問題を追加したい。",
+      "formatted": "EdenQuestの問題を追加したい？",
       "asr_ok": true,
       "final_ok": true,
       "guard": "",
-      "similarity": 1.0,
+      "similarity": 0.947,
       "truncated": false,
-      "whisper_ms": 461,
-      "llm_ms": 1058
+      "whisper_ms": 425,
+      "llm_ms": 807
     },
     {
       "id": "claudecode",
@@ -34,7 +34,7 @@
       "similarity": 1.0,
       "truncated": false,
       "whisper_ms": 155,
-      "llm_ms": 333
+      "llm_ms": 318
     },
     {
       "id": "sugimori",
@@ -46,8 +46,8 @@
       "guard": "",
       "similarity": 0.889,
       "truncated": false,
-      "whisper_ms": 162,
-      "llm_ms": 924
+      "whisper_ms": 159,
+      "llm_ms": 759
     },
     {
       "id": "kotonoha",
@@ -59,34 +59,34 @@
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 156,
-      "llm_ms": 690
+      "whisper_ms": 158,
+      "llm_ms": 633
     },
     {
       "id": "ollama",
       "expect": "Ollama",
-      "raw": "オラマでモデルを動かしている。",
+      "raw": "Ollamaでモデルを動かしている。",
       "formatted": "Ollamaでモデルを動かしています。",
-      "asr_ok": false,
+      "asr_ok": true,
       "final_ok": true,
       "guard": "",
-      "similarity": 0.647,
+      "similarity": 0.919,
       "truncated": false,
-      "whisper_ms": 160,
-      "llm_ms": 347
+      "whisper_ms": 155,
+      "llm_ms": 321
     },
     {
       "id": "qwen",
       "expect": "Qwen",
-      "raw": "空演の7Bを使っている。",
-      "formatted": "空演の7Bを使っています。",
-      "asr_ok": false,
-      "final_ok": false,
+      "raw": "Qwenの7Bを使っている。",
+      "formatted": "Qwenの7Bを使っています。",
+      "asr_ok": true,
+      "final_ok": true,
       "guard": "",
-      "similarity": 0.88,
+      "similarity": 0.897,
       "truncated": false,
-      "whisper_ms": 156,
-      "llm_ms": 325
+      "whisper_ms": 151,
+      "llm_ms": 301
     },
     {
       "id": "supabase",
@@ -98,8 +98,8 @@
       "guard": "",
       "similarity": 0.97,
       "truncated": false,
-      "whisper_ms": 162,
-      "llm_ms": 350
+      "whisper_ms": 158,
+      "llm_ms": 311
     },
     {
       "id": "nextjs",
@@ -111,8 +111,8 @@
       "guard": "",
       "similarity": 0.897,
       "truncated": false,
-      "whisper_ms": 151,
-      "llm_ms": 300
+      "whisper_ms": 150,
+      "llm_ms": 284
     },
     {
       "id": "typescript",
@@ -124,20 +124,20 @@
       "guard": "",
       "similarity": 0.732,
       "truncated": false,
-      "whisper_ms": 154,
-      "llm_ms": 346
+      "whisper_ms": 151,
+      "llm_ms": 335
     },
     {
       "id": "whisper",
       "expect": "Whisper",
       "raw": "Whisperで文字起こしする。",
-      "formatted": "Whisperで音声を文字にする。？",
+      "formatted": "Whisperで音声を書き起こす。？",
       "asr_ok": true,
       "final_ok": true,
       "guard": "",
-      "similarity": 0.765,
+      "similarity": 0.706,
       "truncated": false,
-      "whisper_ms": 152,
+      "whisper_ms": 153,
       "llm_ms": 331
     },
     {
@@ -150,8 +150,8 @@
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 158,
-      "llm_ms": 640
+      "whisper_ms": 159,
+      "llm_ms": 616
     },
     {
       "id": "massouls",
@@ -163,8 +163,8 @@
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 160,
-      "llm_ms": 355
+      "whisper_ms": 159,
+      "llm_ms": 345
     },
     {
       "id": "souron",
@@ -176,8 +176,8 @@
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 156,
-      "llm_ms": 312
+      "whisper_ms": 154,
+      "llm_ms": 301
     },
     {
       "id": "hakushokai",
@@ -190,20 +190,20 @@
       "similarity": 1.0,
       "truncated": false,
       "whisper_ms": 158,
-      "llm_ms": 328
+      "llm_ms": 323
     },
     {
       "id": "eurock",
       "expect": "ユーロックテクノパーツ",
-      "raw": "U-LOKテクノパーツの株を持っている。",
-      "formatted": "U-LOKテクノパーツの株を持っている。",
-      "asr_ok": false,
-      "final_ok": false,
+      "raw": "ユーロックテクノパーツの株を持っている。",
+      "formatted": "ユーロックテクノパーツの株を持っている。",
+      "asr_ok": true,
+      "final_ok": true,
       "guard": "",
       "similarity": 1.0,
       "truncated": false,
-      "whisper_ms": 164,
-      "llm_ms": 360
+      "whisper_ms": 165,
+      "llm_ms": 356
     }
   ]
 }
