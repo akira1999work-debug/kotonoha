@@ -1,8 +1,8 @@
 {
   "version": 2,
   "description": "Kotonoha ユーザー辞書。Whisper/LLM の固有名詞認識を補正する。誤認識を見つけたら readings に追記していけばよい。hit_count/last_used は voice_input.py が自動更新。",
-  "last_updated": "2026-06-20",
-  "_log": "2026-04-14: EdenQuest追加（エレンクエスト等の誤認識対策） / 2026-06-10: ユーロックテクノパーツ追加（koki保有の非上場株、予測的追加） / 2026-06-11: MASSOULS・マスソウルズ追加（SF大作漫画プロジェクト、予測的追加） / 2026-06-13: ソウロン追加（MASSOULS作中の造語＝精神エネルギー、予測的追加） / 2026-06-19: 椙杜追加（koki本人の姓。スギノモリ等の誤変換対策） / 2026-06-20: PayPay追加（ペイペイがPayPal/ペイパルに化ける誤認識対策。koki保有銘柄PAYP）",
+  "last_updated": "2026-08-12",
+  "_log": "2026-04-14: EdenQuest追加（エレンクエスト等の誤認識対策） / 2026-06-10: ユーロックテクノパーツ追加（koki保有の非上場株、予測的追加） / 2026-06-11: MASSOULS・マスソウルズ追加（SF大作漫画プロジェクト、予測的追加） / 2026-06-13: ソウロン追加（MASSOULS作中の造語＝精神エネルギー、予測的追加） / 2026-06-19: 椙杜追加（koki本人の姓。スギノモリ等の誤変換対策） / 2026-06-20: PayPay追加（ペイペイがPayPal/ペイパルに化ける誤認識対策。koki保有銘柄PAYP） / 2026-07-21: 白照会追加（MASSOULS作中カルト。白商会への誤認識を実測）",
   "terms": [
     {
       "term": "PayPay",
@@ -71,6 +71,21 @@
       "last_used": null
     },
     {
+      "term": "白照会",
+      "readings": [
+        "白商会",
+        "はくしょうかい",
+        "ハクショウカイ",
+        "白正会",
+        "白昇会"
+      ],
+      "category": "project",
+      "notes": "MASSOULS作中のカルト組織（白い偽善の光の新宗教）。『白商会』への誤認識を実測（2026-07-21）",
+      "priority": 8,
+      "hit_count": 0,
+      "last_used": null
+    },
+    {
       "term": "ユーロックテクノパーツ",
       "readings": [
         "ユーロックテクノパーツ",
@@ -94,8 +109,8 @@
       "category": "tool",
       "notes": "Anthropic の CLI",
       "priority": 10,
-      "hit_count": 5,
-      "last_used": "2026-05-01"
+      "hit_count": 6,
+      "last_used": "2026-06-21"
     },
     {
       "term": "Whisper",
@@ -192,8 +207,8 @@
       "category": "project",
       "notes": "中学生向けゲーミフィケーション学習プラットフォーム",
       "priority": 10,
-      "hit_count": 11,
-      "last_used": "2026-04-30"
+      "hit_count": 13,
+      "last_used": "2026-08-12"
     }
   ]
 }
